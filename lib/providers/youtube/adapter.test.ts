@@ -51,3 +51,40 @@ describe("YouTubeAdapter.fetchPlaylist", () => {
     expect(statuses).toEqual(["available", "removed", "private"]);
   });
 });
+
+describe("YouTubeAdapter.fetchVideo", () => {
+  it("parses --dump-json output into VideoMetadata", async () => {
+    const stdout = await fixture("video-public");
+    const a = new YouTubeAdapter({ binary: "yt-dlp", execFile: fakeExecReturning(stdout) });
+    const meta = await a.fetchVideo("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    expect(meta).toMatchObject({
+      externalId: "dQw4w9WgXcQ",
+      title: "Sample Public Video",
+      channelTitle: "Channel A",
+      channelId: "UCxyz",
+      durationSeconds: 215,
+      inferredStatus: "available",
+      uploadDate: "20240115",
+    });
+  });
+});
+
+describe("YouTubeAdapter.checkAvailability", () => {
+  it("parses pipe-separated output into status + reason", async () => {
+    const a = new YouTubeAdapter({
+      binary: "yt-dlp",
+      execFile: fakeExecReturning("public|My Title\n"),
+    });
+    const probe = await a.checkAvailability("dQw4w9WgXcQ");
+    expect(probe).toEqual({ status: "available", reason: "My Title" });
+  });
+  it("infers removed status from yt-dlp error stderr", async () => {
+    const a = new YouTubeAdapter({
+      binary: "yt-dlp",
+      execFile: (_f, _a, _o, cb) =>
+        cb(Object.assign(new Error("exit"), { code: 1 }), "", "ERROR: [youtube] xyz: Video unavailable"),
+    });
+    const probe = await a.checkAvailability("xyz");
+    expect(probe.status).toBe("removed");
+  });
+});

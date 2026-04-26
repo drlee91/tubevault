@@ -35,6 +35,18 @@ interface FlatPlaylistJson {
   entries: FlatPlaylistEntry[];
 }
 
+interface VideoJson {
+  id: string;
+  title: string;
+  uploader: string | null;
+  channel_id: string | null;
+  duration: number | null;
+  thumbnail: string | null;
+  availability: string | null;
+  description: string | null;
+  upload_date: string | null;
+}
+
 export class YouTubeAdapter implements MediaProviderAdapter {
   readonly provider: ProviderId = "youtube";
   constructor(private opts: YouTubeAdapterOptions) {}
@@ -69,13 +81,47 @@ export class YouTubeAdapter implements MediaProviderAdapter {
     };
   }
 
-  async fetchVideo(_url: string): Promise<VideoMetadata> {
-    throw new Error("fetchVideo not yet implemented");
+  async fetchVideo(url: string): Promise<VideoMetadata> {
+    const stdout = await runYtDlp(
+      ["--dump-json", "--no-warnings", "--skip-download", url],
+      { binary: this.opts.binary, execFile: this.opts.execFile, timeoutMs: this.opts.timeoutMs },
+    );
+    const j = JSON.parse(stdout) as VideoJson;
+    return {
+      externalId: j.id,
+      title: j.title,
+      channelTitle: j.uploader,
+      channelId: j.channel_id,
+      durationSeconds: j.duration,
+      thumbnailUrl: j.thumbnail,
+      inferredStatus: mapYouTubeAvailability(j.availability, j.title),
+      description: j.description,
+      uploadDate: j.upload_date,
+      availabilityReason: null,
+    };
   }
   async download(_externalId: string, _opts: DownloadOpts): Promise<DownloadResult> {
     throw new Error("download not yet implemented");
   }
-  async checkAvailability(_externalId: string): Promise<AvailabilityProbe> {
-    throw new Error("checkAvailability not yet implemented");
+  async checkAvailability(externalId: string): Promise<AvailabilityProbe> {
+    const url = `https://www.youtube.com/watch?v=${externalId}`;
+    try {
+      const stdout = await runYtDlp(
+        ["--skip-download", "--no-warnings", "--print", "%(availability)s|%(title)s", url],
+        { binary: this.opts.binary, execFile: this.opts.execFile, timeoutMs: this.opts.timeoutMs },
+      );
+      const [rawStatus, ...rest] = stdout.trim().split("|");
+      const title = rest.join("|");
+      return { status: mapYouTubeAvailability(rawStatus ?? null, title), reason: title || null };
+    } catch (e) {
+      const stderr = (e as { stderr?: string }).stderr ?? "";
+      if (/Video unavailable|This video has been removed/i.test(stderr)) {
+        return { status: "removed", reason: stderr.trim() || null };
+      }
+      if (/Private video/i.test(stderr)) return { status: "private", reason: stderr.trim() || null };
+      if (/Sign in to confirm your age/i.test(stderr)) return { status: "age_restricted", reason: stderr.trim() || null };
+      if (/not available in your country/i.test(stderr)) return { status: "region_blocked", reason: stderr.trim() || null };
+      return { status: "unknown", reason: stderr.trim() || null };
+    }
   }
 }
