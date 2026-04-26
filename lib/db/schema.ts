@@ -173,6 +173,7 @@ export const jobs = sqliteTable(
       .default(sql`(unixepoch())`),
     startedAt: integer("started_at", { mode: "timestamp" }),
     finishedAt: integer("finished_at", { mode: "timestamp" }),
+    nextAttemptAt: integer("next_attempt_at", { mode: "timestamp" }),
   },
   (t) => ({
     statusPriorityIdx: index("jobs_status_priority_idx").on(t.status, t.priority),
