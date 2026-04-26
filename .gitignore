@@ -28,6 +28,7 @@ next-env.d.ts
 .env.production.local
 
 # Local data
+data/
 *.db
 *.db-journal
 *.db-wal
@@ -49,7 +50,7 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Storage (User-Data, sollte nicht ins Repo)
+# Storage (user data — should never be committed)
 storage/
 downloads/
 

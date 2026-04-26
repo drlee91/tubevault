@@ -13,6 +13,7 @@
 **Vision:** **TubeVault** ist eine lokale App, die YouTube-Playlists (und später SoundCloud / andere Quellen) **proaktiv sichert** — Audio bzw. Video wird heruntergeladen, sobald ein Track in einer beobachteten Playlist auftaucht. Verschwindet der Track später bei der Quelle, bleibt er lokal hörbar und wird in der UI mit einem Status-Badge gekennzeichnet. Eingebauter Audio- + Video-Player macht TubeVault zur primären Hör-Oberfläche.
 
 **Erfolgskriterien:**
+
 - User fügt eine Playlist-URL hinzu → in unter 1 Minute sind die ersten Tracks abspielbar
 - User sieht auf einen Blick, welche Tracks bei der Quelle nicht mehr verfügbar sind, kann sie aber lokal weiter abspielen
 - Sync läuft automatisch nach konfigurierter Schedule, solange die App-Instanz läuft (kein manuelles Triggern pro Sync nötig)
@@ -52,17 +53,18 @@
 ```
 
 **Begründung:**
+
 - Service-Layer ist UI-agnostisch → leicht testbar mit Vitest, kein Browser nötig
 - Adapter-Layer kapselt yt-dlp/ffmpeg → bei Breaking Changes nur ein Adapter-Tausch nötig
 - UI-Layer ist die einzige Schicht die „Browser" annimmt → bei späterer Tauri-/Electron-Verpackung minimaler Aufwand
 
 ### 2.3 Deployment-Modi
 
-| Modus | Beschreibung | Phase |
-|---|---|---|
-| **Lokal** | `npm run dev` oder `npm run start`, User öffnet `localhost:3000` | Phase 1 (Start) |
+| Modus                  | Beschreibung                                                     | Phase                                 |
+| ---------------------- | ---------------------------------------------------------------- | ------------------------------------- |
+| **Lokal**              | `npm run dev` oder `npm run start`, User öffnet `localhost:3000` | Phase 1 (Start)                       |
 | **Dockerized auf NAS** | Docker-Container, mountet Storage-Volume, vom LAN aus erreichbar | Phase 2 (optional, wenn User es will) |
-| **Tauri/Electron** | Native Desktop-App mit System-Tray | Phase 3 (optional) |
+| **Tauri/Electron**     | Native Desktop-App mit System-Tray                               | Phase 3 (optional)                    |
 
 **Architekturentscheidung:** Phase 1 wird so gebaut, dass Phase 2 ein Dockerfile + ein paar Env-Vars ist. Keine Phase-2-Features (Multi-User-Auth, etc.) werden vorab eingebaut (YAGNI).
 
@@ -88,111 +90,118 @@
 ### 3.2 Tabellen
 
 #### `playlists`
-| Spalte | Typ | Beschreibung |
-|---|---|---|
-| `id` | INTEGER PK | |
-| `provider` | TEXT | `'youtube' \| 'soundcloud' \| ...` |
-| `external_id` | TEXT | YT Playlist-ID, SC Set-Slug, etc. |
-| `title` | TEXT | |
-| `channel_title` | TEXT | |
-| `url` | TEXT | Original-URL |
-| `default_format` | TEXT | `'audio' \| 'video'` |
-| `format_overrides` | JSON | Optional: `{audio_bitrate: 320, video_quality: '1080p'}` |
-| `sync_enabled` | INTEGER (bool) | |
-| `sync_schedule_cron` | TEXT NULL | Override für globale Schedule |
-| `last_synced_at` | TIMESTAMP NULL | |
-| `created_at` | TIMESTAMP | |
+
+| Spalte               | Typ            | Beschreibung                                             |
+| -------------------- | -------------- | -------------------------------------------------------- |
+| `id`                 | INTEGER PK     |                                                          |
+| `provider`           | TEXT           | `'youtube' \| 'soundcloud' \| ...`                       |
+| `external_id`        | TEXT           | YT Playlist-ID, SC Set-Slug, etc.                        |
+| `title`              | TEXT           |                                                          |
+| `channel_title`      | TEXT           |                                                          |
+| `url`                | TEXT           | Original-URL                                             |
+| `default_format`     | TEXT           | `'audio' \| 'video'`                                     |
+| `format_overrides`   | JSON           | Optional: `{audio_bitrate: 320, video_quality: '1080p'}` |
+| `sync_enabled`       | INTEGER (bool) |                                                          |
+| `sync_schedule_cron` | TEXT NULL      | Override für globale Schedule                            |
+| `last_synced_at`     | TIMESTAMP NULL |                                                          |
+| `created_at`         | TIMESTAMP      |                                                          |
 
 Unique: `(provider, external_id)`
 
 #### `videos`
-| Spalte | Typ | Beschreibung |
-|---|---|---|
-| `id` | INTEGER PK | |
-| `provider` | TEXT | |
-| `external_id` | TEXT | |
-| `title` | TEXT | |
-| `channel_title` | TEXT | |
-| `channel_id` | TEXT | |
-| `duration_seconds` | INTEGER | |
-| `thumbnail_url` | TEXT | |
-| `availability_status` | TEXT | `'available' \| 'private' \| 'removed' \| 'age_restricted' \| 'region_blocked' \| 'unknown'` |
-| `availability_reason` | TEXT NULL | Original-Message vom Provider |
-| `availability_changed_at` | TIMESTAMP | |
-| `first_seen_at` | TIMESTAMP | |
-| `last_seen_at` | TIMESTAMP | |
-| `created_at` | TIMESTAMP | |
-| `updated_at` | TIMESTAMP | |
+
+| Spalte                    | Typ        | Beschreibung                                                                                 |
+| ------------------------- | ---------- | -------------------------------------------------------------------------------------------- |
+| `id`                      | INTEGER PK |                                                                                              |
+| `provider`                | TEXT       |                                                                                              |
+| `external_id`             | TEXT       |                                                                                              |
+| `title`                   | TEXT       |                                                                                              |
+| `channel_title`           | TEXT       |                                                                                              |
+| `channel_id`              | TEXT       |                                                                                              |
+| `duration_seconds`        | INTEGER    |                                                                                              |
+| `thumbnail_url`           | TEXT       |                                                                                              |
+| `availability_status`     | TEXT       | `'available' \| 'private' \| 'removed' \| 'age_restricted' \| 'region_blocked' \| 'unknown'` |
+| `availability_reason`     | TEXT NULL  | Original-Message vom Provider                                                                |
+| `availability_changed_at` | TIMESTAMP  |                                                                                              |
+| `first_seen_at`           | TIMESTAMP  |                                                                                              |
+| `last_seen_at`            | TIMESTAMP  |                                                                                              |
+| `created_at`              | TIMESTAMP  |                                                                                              |
+| `updated_at`              | TIMESTAMP  |                                                                                              |
 
 Unique: `(provider, external_id)`
 
 #### `playlist_items` (Join Playlist ↔ Video)
-| Spalte | Typ | Beschreibung |
-|---|---|---|
-| `id` | INTEGER PK | |
-| `playlist_id` | INTEGER FK | |
-| `video_id` | INTEGER FK | |
-| `position` | INTEGER | Reihenfolge in der Playlist |
-| `in_playlist` | INTEGER (bool) | true wenn beim letzten Sync drin, false wenn entfernt |
-| `removed_from_playlist_at` | TIMESTAMP NULL | |
-| `added_at` | TIMESTAMP | |
+
+| Spalte                     | Typ            | Beschreibung                                          |
+| -------------------------- | -------------- | ----------------------------------------------------- |
+| `id`                       | INTEGER PK     |                                                       |
+| `playlist_id`              | INTEGER FK     |                                                       |
+| `video_id`                 | INTEGER FK     |                                                       |
+| `position`                 | INTEGER        | Reihenfolge in der Playlist                           |
+| `in_playlist`              | INTEGER (bool) | true wenn beim letzten Sync drin, false wenn entfernt |
+| `removed_from_playlist_at` | TIMESTAMP NULL |                                                       |
+| `added_at`                 | TIMESTAMP      |                                                       |
 
 Unique: `(playlist_id, video_id)`
 
 **Trennung wichtig:** „Video gelöscht bei YouTube" (`videos.availability_status`) ist getrennt von „Video aus dieser Playlist entfernt" (`playlist_items.in_playlist`). Ein Video kann aus einer Playlist gekickt werden, aber in einer anderen weiter existieren — und auf YouTube weiter verfügbar sein.
 
 #### `media_files`
-| Spalte | Typ | Beschreibung |
-|---|---|---|
-| `id` | INTEGER PK | |
-| `video_id` | INTEGER FK | |
-| `kind` | TEXT | `'audio' \| 'video'` |
-| `file_path` | TEXT | Absoluter Pfad |
-| `format` | TEXT | `'mp3' \| 'm4a' \| 'opus' \| 'flac' \| 'mp4' \| 'webm' \| 'mkv'` |
-| `quality` | TEXT | z.B. `'320kbps'`, `'1080p'`, `'best'` |
-| `file_size_bytes` | INTEGER | |
-| `duration_seconds` | INTEGER | |
-| `checksum` | TEXT NULL | sha256 für Integrity-Checks |
-| `downloaded_at` | TIMESTAMP | |
+
+| Spalte             | Typ        | Beschreibung                                                     |
+| ------------------ | ---------- | ---------------------------------------------------------------- |
+| `id`               | INTEGER PK |                                                                  |
+| `video_id`         | INTEGER FK |                                                                  |
+| `kind`             | TEXT       | `'audio' \| 'video'`                                             |
+| `file_path`        | TEXT       | Absoluter Pfad                                                   |
+| `format`           | TEXT       | `'mp3' \| 'm4a' \| 'opus' \| 'flac' \| 'mp4' \| 'webm' \| 'mkv'` |
+| `quality`          | TEXT       | z.B. `'320kbps'`, `'1080p'`, `'best'`                            |
+| `file_size_bytes`  | INTEGER    |                                                                  |
+| `duration_seconds` | INTEGER    |                                                                  |
+| `checksum`         | TEXT NULL  | sha256 für Integrity-Checks                                      |
+| `downloaded_at`    | TIMESTAMP  |                                                                  |
 
 Ein Video kann beides haben (Audio-Rip + Video-Rip). Pro `(video_id, kind)` ist ein File aktiv; ältere Versionen werden überschrieben (kein Versions-History in Phase 1).
 
 #### `sync_runs` (Audit-Log)
-| Spalte | Typ | Beschreibung |
-|---|---|---|
-| `id` | INTEGER PK | |
-| `playlist_id` | INTEGER FK | |
-| `started_at` | TIMESTAMP | |
-| `finished_at` | TIMESTAMP NULL | |
-| `status` | TEXT | `'running' \| 'success' \| 'partial' \| 'failed'` |
-| `videos_added` | INTEGER | |
-| `videos_removed` | INTEGER | |
-| `videos_unavailable` | INTEGER | |
-| `videos_downloaded` | INTEGER | |
-| `error_log` | JSON NULL | Liste von Errors mit `{video_id?, code, message, timestamp}` |
-| `triggered_by` | TEXT | `'manual' \| 'schedule' \| 'startup'` |
+
+| Spalte               | Typ            | Beschreibung                                                 |
+| -------------------- | -------------- | ------------------------------------------------------------ |
+| `id`                 | INTEGER PK     |                                                              |
+| `playlist_id`        | INTEGER FK     |                                                              |
+| `started_at`         | TIMESTAMP      |                                                              |
+| `finished_at`        | TIMESTAMP NULL |                                                              |
+| `status`             | TEXT           | `'running' \| 'success' \| 'partial' \| 'failed'`            |
+| `videos_added`       | INTEGER        |                                                              |
+| `videos_removed`     | INTEGER        |                                                              |
+| `videos_unavailable` | INTEGER        |                                                              |
+| `videos_downloaded`  | INTEGER        |                                                              |
+| `error_log`          | JSON NULL      | Liste von Errors mit `{video_id?, code, message, timestamp}` |
+| `triggered_by`       | TEXT           | `'manual' \| 'schedule' \| 'startup'`                        |
 
 #### `jobs` (Persistente Queue)
-| Spalte | Typ | Beschreibung |
-|---|---|---|
-| `id` | INTEGER PK | |
-| `type` | TEXT | `'sync_playlist' \| 'download_video' \| 'check_availability'` |
-| `payload` | JSON | Job-spezifisch |
-| `status` | TEXT | `'queued' \| 'running' \| 'completed' \| 'failed' \| 'cancelled'` |
-| `priority` | INTEGER | Default 0, höher = früher |
-| `attempts` | INTEGER | |
-| `max_attempts` | INTEGER | Default 3 |
-| `last_error` | TEXT NULL | |
-| `created_at` | TIMESTAMP | |
-| `started_at` | TIMESTAMP NULL | |
-| `finished_at` | TIMESTAMP NULL | |
+
+| Spalte         | Typ            | Beschreibung                                                      |
+| -------------- | -------------- | ----------------------------------------------------------------- |
+| `id`           | INTEGER PK     |                                                                   |
+| `type`         | TEXT           | `'sync_playlist' \| 'download_video' \| 'check_availability'`     |
+| `payload`      | JSON           | Job-spezifisch                                                    |
+| `status`       | TEXT           | `'queued' \| 'running' \| 'completed' \| 'failed' \| 'cancelled'` |
+| `priority`     | INTEGER        | Default 0, höher = früher                                         |
+| `attempts`     | INTEGER        |                                                                   |
+| `max_attempts` | INTEGER        | Default 3                                                         |
+| `last_error`   | TEXT NULL      |                                                                   |
+| `created_at`   | TIMESTAMP      |                                                                   |
+| `started_at`   | TIMESTAMP NULL |                                                                   |
+| `finished_at`  | TIMESTAMP NULL |                                                                   |
 
 #### `settings` (Key/Value Store)
-| Spalte | Typ |
-|---|---|
-| `key` | TEXT PK |
-| `value` | TEXT (JSON-encoded) |
-| `updated_at` | TIMESTAMP |
+
+| Spalte       | Typ                 |
+| ------------ | ------------------- |
+| `key`        | TEXT PK             |
+| `value`      | TEXT (JSON-encoded) |
+| `updated_at` | TIMESTAMP           |
 
 Beispiel-Keys: `audio_storage_path`, `video_storage_path`, `use_single_storage_path`, `default_audio_format`, `default_audio_bitrate`, `default_video_quality`, `embed_thumbnails`, `global_sync_cron`, `concurrency_max`, etc.
 
@@ -210,13 +219,13 @@ Beispiel-Keys: `audio_storage_path`, `video_storage_path`, `use_single_storage_p
 
 ```ts
 interface MediaProviderAdapter {
-  readonly provider: ProviderId  // 'youtube' | 'soundcloud' | ...
-  matchesUrl(url: string): boolean
-  fetchPlaylist(url: string): Promise<PlaylistMetadata>
-  fetchVideo(url: string): Promise<VideoMetadata>
-  download(externalId: string, opts: DownloadOpts): Promise<MediaFile>
-  checkAvailability(externalId: string): Promise<AvailabilityStatus>
-  mapStatus(rawStatus: string): AvailabilityStatus
+  readonly provider: ProviderId; // 'youtube' | 'soundcloud' | ...
+  matchesUrl(url: string): boolean;
+  fetchPlaylist(url: string): Promise<PlaylistMetadata>;
+  fetchVideo(url: string): Promise<VideoMetadata>;
+  download(externalId: string, opts: DownloadOpts): Promise<MediaFile>;
+  checkAvailability(externalId: string): Promise<AvailabilityStatus>;
+  mapStatus(rawStatus: string): AvailabilityStatus;
 }
 ```
 
@@ -224,9 +233,9 @@ interface MediaProviderAdapter {
 
 ```ts
 class ProviderRegistry {
-  register(adapter: MediaProviderAdapter): void
-  findByUrl(url: string): MediaProviderAdapter | null
-  findById(provider: ProviderId): MediaProviderAdapter | null
+  register(adapter: MediaProviderAdapter): void;
+  findByUrl(url: string): MediaProviderAdapter | null;
+  findById(provider: ProviderId): MediaProviderAdapter | null;
 }
 ```
 
@@ -241,13 +250,13 @@ URL-Matching geschieht zentral: `Add Playlist`-API ruft `registry.findByUrl(url)
 
 ```ts
 type AvailabilityStatus =
-  | 'available'
-  | 'private'
-  | 'removed'
-  | 'age_restricted'
-  | 'region_blocked'
-  | 'auth_required'
-  | 'unknown'
+  | "available"
+  | "private"
+  | "removed"
+  | "age_restricted"
+  | "region_blocked"
+  | "auth_required"
+  | "unknown";
 ```
 
 Jeder Adapter mappt seine provider-spezifischen Outputs auf dieses Enum.
@@ -292,20 +301,21 @@ UI redirect → /playlists/[id] (Live-Progress via Polling oder SSE)
 ### 5.3 Status Detection
 
 `check_availability` Job führt aus:
+
 ```bash
 yt-dlp --skip-download --print "%(availability)s\t%(title)s" <url>
 ```
 
 Mapping (YouTube):
 
-| yt-dlp output | DB status |
-|---|---|
-| `public` / `unlisted` | `available` |
-| `private` | `private` |
-| `Video unavailable` / `removed` | `removed` |
-| `Sign in to confirm your age` | `age_restricted` |
-| `not available in your country` | `region_blocked` |
-| Network/parse error | `unknown` (retry next time) |
+| yt-dlp output                   | DB status                   |
+| ------------------------------- | --------------------------- |
+| `public` / `unlisted`           | `available`                 |
+| `private`                       | `private`                   |
+| `Video unavailable` / `removed` | `removed`                   |
+| `Sign in to confirm your age`   | `age_restricted`            |
+| `not available in your country` | `region_blocked`            |
+| Network/parse error             | `unknown` (retry next time) |
 
 Status-Change wird in `videos.availability_status` + `availability_changed_at` gespeichert.
 
@@ -318,11 +328,11 @@ Status-Change wird in `videos.availability_status` + `availability_changed_at` g
 
 ### 5.5 Sync-Trigger
 
-| Trigger | Mechanismus |
-|---|---|
-| **Manual** | UI-Button „Sync Now" auf Playlist-Detail oder Library |
-| **Schedule** | In-Process-Cron (z.B. `node-cron`) liest `playlists.sync_schedule_cron` oder Global-Setting |
-| **App-Start** | Falls Setting `sync_on_startup=true` |
+| Trigger       | Mechanismus                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| **Manual**    | UI-Button „Sync Now" auf Playlist-Detail oder Library                                       |
+| **Schedule**  | In-Process-Cron (z.B. `node-cron`) liest `playlists.sync_schedule_cron` oder Global-Setting |
+| **App-Start** | Falls Setting `sync_on_startup=true`                                                        |
 
 ---
 
@@ -362,10 +372,10 @@ Status-Change wird in `videos.availability_status` + `availability_changed_at` g
 
 Editorial-style Tabelle (kein Karten-Grid):
 
-| # | Track | Channel | Duration | Added | Status | ⋮ |
-|---|---|---|---|---|---|---|
-| 12 | Cover + Titel | Channel | 4:12 | 3d ago | ●available | ⋯ |
-| 13 | Cover + Titel | Channel | 3:47 | 2w ago | ⛔removed | ⋯ |
+| #   | Track         | Channel | Duration | Added  | Status     | ⋮   |
+| --- | ------------- | ------- | -------- | ------ | ---------- | --- |
+| 12  | Cover + Titel | Channel | 4:12     | 3d ago | ●available | ⋯   |
+| 13  | Cover + Titel | Channel | 3:47     | 2w ago | ⛔removed  | ⋯   |
 
 - Status-Badges: dezente Pills, Farb-codiert (green/amber/red/gray) + Lucide-Icons
 - Row-Click: Play sofort. Detail-Link: Video-Detail-Page.
@@ -375,6 +385,7 @@ Editorial-style Tabelle (kein Karten-Grid):
 ### 6.4 Activity-Page
 
 Timeline, chronologisch, filterbar:
+
 ```
 2026-04-26 14:23  ✓ Sync 'Lo-Fi Beats'  +3 added, 1 removed, 1 became unavailable
 2026-04-26 14:21  ⬇ Downloaded 'Track XY' (4.2 MB, 192kbps mp3)
@@ -384,17 +395,18 @@ Timeline, chronologisch, filterbar:
 ### 6.5 Standalone Videos
 
 User kann einzelne Videos ohne Playlist hinzufügen via „+ Add ▾ → Video":
+
 - Wird als `videos`-Row angelegt, **kein** `playlist_items`-Eintrag
 - Tauchen im `/library`-View auf, gefiltert über „Standalone"-Tab
 - Sync-Re-Check geht über `check_availability`-Job (kein Playlist-Diff nötig)
 
 ### 6.6 Responsive
 
-| Breakpoint | Anpassung |
-|---|---|
-| **≥1024px** | Volle Sidebar + Mainview + Player-Bar |
-| **768–1023px** | Sidebar → Icon-Rail (40px), Tabelle behält Spalten |
-| **<768px** | Bottom-Tab-Bar statt Sidebar, Tabelle → kompakte Liste, Player-Fullscreen primär, Touch-Targets ≥44px |
+| Breakpoint     | Anpassung                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| **≥1024px**    | Volle Sidebar + Mainview + Player-Bar                                                                 |
+| **768–1023px** | Sidebar → Icon-Rail (40px), Tabelle behält Spalten                                                    |
+| **<768px**     | Bottom-Tab-Bar statt Sidebar, Tabelle → kompakte Liste, Player-Fullscreen primär, Touch-Targets ≥44px |
 
 Container-Queries via `@tailwindcss/container-queries` für isolierte Komponenten. PWA-fähig (Manifest + Service-Worker für Phase-2-NAS-Deployment).
 
@@ -494,11 +506,13 @@ Persistent in localStorage: `volume`, `shuffle`, `repeat`, letzte `queue` + `cur
 ### 8.1 Tabs
 
 #### General
+
 - App-Name + Version (read-only)
 - Theme: Light / Dark / System
 - Language: EN only (Phase 1; i18n-ready architecture aber keine zweite Sprache shipped)
 
 #### Storage
+
 - **Audio Storage Path** (z.B. `~/Music/TubeVault/audio/`) mit Browse-Button + Validation
 - **Video Storage Path** (z.B. `~/Videos/TubeVault/`) — separat einstellbar (z.B. Audio auf SSD, Video auf HDD)
 - **Use single path for both** Toggle — wenn aktiv, wird nur ein Path verwendet (Default für Einsteiger)
@@ -508,6 +522,7 @@ Persistent in localStorage: `volume`, `shuffle`, `repeat`, letzte `queue` + `cur
 - **Cleanup**: Lösche orphaned Files (in beiden Pfaden)
 
 #### Audio Defaults
+
 - Format: MP3 / M4A / Opus / FLAC / Best-Source
 - Bitrate: 128 / 192 / 256 / 320 / VBR-Best
 - Embed Thumbnail: on/off
@@ -515,17 +530,20 @@ Persistent in localStorage: `volume`, `shuffle`, `repeat`, letzte `queue` + `cur
 - Normalize Loudness (ffmpeg `loudnorm`): on/off
 
 #### Video Defaults
+
 - Resolution: 480p / 720p / 1080p / 1440p / 2160p / Best
 - Container: MP4 / WebM / MKV
 - Codec Preference: avc1 / vp9 / av1
 
 #### Sync
+
 - Global Schedule (cron-Expression mit Presets)
 - Sync on App Start: on/off
 - Concurrency: 1–10
 - Retry: max attempts, backoff factor
 
 #### Advanced
+
 - yt-dlp Path (auto-detect / manual)
 - ffmpeg Path (auto-detect / manual)
 - yt-dlp Extra Args
@@ -534,6 +552,7 @@ Persistent in localStorage: `volume`, `shuffle`, `repeat`, letzte `queue` + `cur
 - Export / Import (JSON-Backup)
 
 #### About
+
 - Version, Lizenz, GitHub-Link
 
 ### 8.2 Override-Hierarchie
@@ -552,15 +571,16 @@ In der UI: Playlist-Override-Block zeigt „inherits from Settings" wenn nicht g
 
 ### 9.1 Klassen
 
-| Klasse | Beispiele | Strategie | UI |
-|---|---|---|---|
-| **Recoverable** (transient) | Network-Timeout, 429 | Exponential backoff, max 3 retries | Dezenter Indicator („Will retry in 16s") |
-| **Permanent** (track-specific) | Private, Removed, Age-restricted | Status setzen, kein Retry | Badge auf Track-Row mit Tooltip |
-| **System** (App/Infra) | yt-dlp missing, DB locked, Disk full | Stop sync, prominenter Banner | Topbar-Indikator + Settings-Banner |
+| Klasse                         | Beispiele                            | Strategie                          | UI                                       |
+| ------------------------------ | ------------------------------------ | ---------------------------------- | ---------------------------------------- |
+| **Recoverable** (transient)    | Network-Timeout, 429                 | Exponential backoff, max 3 retries | Dezenter Indicator („Will retry in 16s") |
+| **Permanent** (track-specific) | Private, Removed, Age-restricted     | Status setzen, kein Retry          | Badge auf Track-Row mit Tooltip          |
+| **System** (App/Infra)         | yt-dlp missing, DB locked, Disk full | Stop sync, prominenter Banner      | Topbar-Indikator + Settings-Banner       |
 
 ### 9.2 Self-Check on Boot
 
 App prüft beim Start:
+
 - yt-dlp installiert + executable
 - ffmpeg installiert + executable
 - Storage-Path existiert + writable
@@ -576,6 +596,7 @@ Health-Status auf der Settings-Page + Topbar-Dot (green/amber/red).
 - „Copy Debug-Info" Button kopiert Sync-Run + System-Info als JSON für Issue-Reports
 
 ### 9.4 Was NICHT
+
 - Keine Telemetry, kein Sentry, keine externen Crash-Reports — alles bleibt lokal
 - Keine Modal-Errors die App blockieren — alles Toasts oder inline
 
@@ -592,7 +613,9 @@ Health-Status auf der Settings-Page + Topbar-Dot (green/amber/red).
 ```
 
 ### 10.2 Unit-Tests
+
 Pflicht-Coverage für:
+
 - `UrlParser` / `ProviderRegistry`
 - `StatusMapper` (alle Mapping-Pfade pro Provider)
 - `DiffAlgorithm` (added/removed/unchanged + edge cases)
@@ -600,6 +623,7 @@ Pflicht-Coverage für:
 - Adapter-Layer (mit gemocktem `child_process`)
 
 ### 10.3 Integration-Tests
+
 - Repository-Layer gegen `:memory:` SQLite
 - Sync-Service End-to-End mit Mock-Adapter
 - Migrations laufen sauber durch
@@ -612,6 +636,7 @@ Pflicht-Coverage für:
 - Refresh-Script `npm run fixtures:refresh` für manuelles Update gegen echtes yt-dlp
 
 ### 10.5 E2E (Playwright, headless)
+
 1. Add Playlist → Sync → Tracks erscheinen
 2. Track abspielen → Player startet → Seek
 3. Re-Sync → entfernte Videos als removed markiert
@@ -635,6 +660,7 @@ E2E gegen App + gemocktes yt-dlp (Test-Mode).
 - Repo gesamt: ~70% Sanity-Check
 
 ### 10.8 Was NICHT
+
 - Kein UI-Snapshot-Testing (Snapshot-Spam)
 - Keine Performance-Tests in Phase 1
 - Keine Cross-Browser-Tests (Chromium reicht)
@@ -644,6 +670,7 @@ E2E gegen App + gemocktes yt-dlp (Test-Mode).
 ## 11. Phasen / Out-of-Scope
 
 ### Phase 1 (initiale Implementation)
+
 - YouTube-Provider
 - Playlists + Standalone-Videos
 - Audio + Video Download (yt-dlp)
@@ -656,6 +683,7 @@ E2E gegen App + gemocktes yt-dlp (Test-Mode).
 - **Public GitHub Repo:** Englische README, LICENSE (MIT), Contributing-Guide, alle UI-Strings, Code-Comments, Commit-Messages auf Englisch
 
 ### Phase 2 (folgende Iterationen)
+
 - SoundCloud-Provider
 - Docker-Image für NAS-Deployment
 - PWA / Installable
@@ -664,11 +692,13 @@ E2E gegen App + gemocktes yt-dlp (Test-Mode).
 - Advanced Search (Full-Text)
 
 ### Phase 3 (vielleicht nie)
+
 - Tauri/Electron Native-Wrapper
 - Multi-User Auth (für NAS-Deployment mit Familie)
 - Cast / Sonos / Chromecast
 
 ### Bewusst NICHT geplant
+
 - Keine Cloud-Synchronisation (privacy-by-design)
 - Kein Content-Hosting / Sharing (rechtlich heikel, persönlicher Use)
 - Keine YouTube Data API v3 (yt-dlp reicht)
@@ -686,6 +716,7 @@ E2E gegen App + gemocktes yt-dlp (Test-Mode).
 - **Rechtlicher Status:** Privater Download für persönlichen Gebrauch ist in DE meistens unproblematisch (§53 UrhG für eigene Privatkopie); kommerzielle Nutzung oder Weitergabe ist es nicht. **Mitigation:** Disclaimer im README, keine Sharing-Features.
 
 ### 12.2 Offen für Implementation-Phase
+
 - Concrete Color-Palette (im `taste`-Skill bei UI-Implementation finalisieren)
 - Specifics des Naming-Patterns-Engine (Welche Variablen, Sanitization)
 - Genaue Cron-UI in Settings (Free-Form vs. Wizard)
@@ -694,16 +725,16 @@ E2E gegen App + gemocktes yt-dlp (Test-Mode).
 
 ## 13. Glossar
 
-| Begriff | Bedeutung |
-|---|---|
-| **Provider** | Externe Quelle für Playlists/Videos (YouTube, SoundCloud, …) |
-| **External ID** | Provider-spezifische ID (YT Video-ID, SC Track-ID) |
-| **Playlist Item** | Zuordnung eines Videos zu einer Playlist (Join-Row) |
-| **Availability Status** | Status eines Videos beim Provider (available/private/removed/…) |
-| **In Playlist** | Boolean: Ist Video aktuell noch in der Quell-Playlist? |
-| **Sync Run** | Eine Ausführung des Sync-Vorgangs für eine Playlist |
-| **Job** | Persistente Task in der Background-Queue (sync, download, check) |
-| **Self-Check** | Boot-Time Health-Check (yt-dlp/ffmpeg/Storage/DB) |
+| Begriff                 | Bedeutung                                                        |
+| ----------------------- | ---------------------------------------------------------------- |
+| **Provider**            | Externe Quelle für Playlists/Videos (YouTube, SoundCloud, …)     |
+| **External ID**         | Provider-spezifische ID (YT Video-ID, SC Track-ID)               |
+| **Playlist Item**       | Zuordnung eines Videos zu einer Playlist (Join-Row)              |
+| **Availability Status** | Status eines Videos beim Provider (available/private/removed/…)  |
+| **In Playlist**         | Boolean: Ist Video aktuell noch in der Quell-Playlist?           |
+| **Sync Run**            | Eine Ausführung des Sync-Vorgangs für eine Playlist              |
+| **Job**                 | Persistente Task in der Background-Queue (sync, download, check) |
+| **Self-Check**          | Boot-Time Health-Check (yt-dlp/ffmpeg/Storage/DB)                |
 
 ---
 
