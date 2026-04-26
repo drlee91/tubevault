@@ -91,6 +91,8 @@ export const playlistItems = sqliteTable(
     videoId: integer("video_id")
       .notNull()
       .references(() => videos.id, { onDelete: "cascade" }),
+    // Position is provider-reported ordering, treated as a hint not a unique key —
+    // YouTube occasionally returns duplicate positions during transitional states.
     position: integer("position").notNull(),
     inPlaylist: integer("in_playlist", { mode: "boolean" }).notNull().default(true),
     removedFromPlaylistAt: integer("removed_from_playlist_at", { mode: "timestamp" }),
