@@ -3,13 +3,7 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import type { SelfCheckResult, CheckStatus } from "@/lib/services/self-check-service";
-
-const tone: Record<CheckStatus, "ok" | "warn" | "error"> = {
-  ok: "ok",
-  warn: "warn",
-  error: "error",
-};
+import type { SelfCheckResult } from "@/lib/services/self-check-service";
 
 export function SelfCheckBanner() {
   const [data, setData] = useState<SelfCheckResult | null>(null);
@@ -17,9 +11,12 @@ export function SelfCheckBanner() {
 
   useEffect(() => {
     fetch("/api/health")
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`health check failed (${r.status})`);
+        return (await r.json()) as SelfCheckResult;
+      })
       .then(setData)
-      .catch((e) => setError(String(e)));
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
   if (error) {
@@ -53,7 +50,7 @@ export function SelfCheckBanner() {
     <Card>
       <CardHeader className="flex items-center justify-between">
         <CardTitle>System Health</CardTitle>
-        <Badge tone={tone[data.overall]}>{data.overall}</Badge>
+        <Badge tone={data.overall}>{data.overall}</Badge>
       </CardHeader>
       <CardContent>
         <dl className="grid grid-cols-[8rem_auto_1fr] items-center gap-x-3 gap-y-2 text-sm">
@@ -61,7 +58,7 @@ export function SelfCheckBanner() {
             <div key={c.name} className="contents">
               <dt className="font-mono text-xs text-[var(--color-muted)]">{c.name}</dt>
               <dd>
-                <Badge tone={tone[c.status]}>{c.status}</Badge>
+                <Badge tone={c.status}>{c.status}</Badge>
               </dd>
               <dd className="truncate text-xs text-[var(--color-muted)]">{c.detail}</dd>
             </div>
