@@ -496,7 +496,7 @@ Persistent in localStorage: `volume`, `shuffle`, `repeat`, letzte `queue` + `cur
 #### General
 - App-Name + Version (read-only)
 - Theme: Light / Dark / System
-- Language: DE / EN
+- Language: EN only (Phase 1; i18n-ready architecture aber keine zweite Sprache shipped)
 
 #### Storage
 - **Audio Storage Path** (z.B. `~/Music/TubeVault/audio/`) mit Browse-Button + Validation
@@ -653,6 +653,7 @@ E2E gegen App + gemocktes yt-dlp (Test-Mode).
 - Settings (alle Tabs)
 - Error-Handling + Self-Check
 - Lokales Deployment
+- **Public GitHub Repo:** Englische README, LICENSE (MIT), Contributing-Guide, alle UI-Strings, Code-Comments, Commit-Messages auf Englisch
 
 ### Phase 2 (folgende Iterationen)
 - SoundCloud-Provider
