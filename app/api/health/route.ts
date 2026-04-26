@@ -3,12 +3,14 @@ import { SelfCheckService, type SelfCheckResult } from "@/lib/services/self-chec
 import { SettingsService } from "@/lib/services/settings-service";
 import { SettingsRepository } from "@/lib/db/repositories/settings-repo";
 import { getDb } from "@/lib/db/client";
+import { ensureBooted } from "@/lib/boot";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const dbPath = process.env.TUBEVAULT_DB_PATH ?? "./data/tubevault.db";
   try {
+    await ensureBooted();
     const db = getDb(dbPath);
     const settings = new SettingsService(new SettingsRepository(db));
 
