@@ -1,0 +1,12 @@
+{
+  "id": "PLDEL",
+  "title": "Mixed Playlist",
+  "uploader": "Sample",
+  "webpage_url": "https://www.youtube.com/playlist?list=PLDEL",
+  "_type": "playlist",
+  "entries": [
+    { "_type": "url", "id": "ok1", "title": "Still Here", "uploader": "C", "duration": 120, "thumbnails": [], "availability": "public" },
+    { "_type": "url", "id": "del1", "title": "[Deleted video]", "uploader": null, "duration": null, "thumbnails": [], "availability": null },
+    { "_type": "url", "id": "priv1", "title": "[Private video]", "uploader": null, "duration": null, "thumbnails": [], "availability": null }
+  ]
+}
