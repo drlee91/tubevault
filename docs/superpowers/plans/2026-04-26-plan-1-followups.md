@@ -89,3 +89,25 @@ Tracked items surfaced during task reviews that were intentionally deferred to a
 - **Where:** `lib/services/settings-service.ts` `getYtdlpPath()`, `getFfmpegPath()`, `getGlobalSyncCron()`.
 - **Effect:** Returning `null` is ambiguous between "user explicitly cleared" and "never set." Today self-check (Task 12) treats both as "auto-detect," which is fine. Plan 5 may need to distinguish.
 - **Fix:** Add JSDoc `/** Returns null if no override set; caller responsible for fallback. */` on the three getters. Defer the deeper "explicit-null" sentinel design until Plan 5 raises the need.
+
+## From Task 15 review (commit `fa0b1b8`)
+
+### F10 — Cold-start race + silent-success-after-failure in boot module
+
+- **Where:** `lib/boot.ts` uses `let booted = false` flag + fired-and-forgotten `void ensureBooted().catch(...)`.
+- **Effect:**
+  1. **Cold-start UX papercut:** First request can hit `/api/health` while migrations are still running (the layout import doesn't await), surfacing a brief red banner that disappears on the next refresh.
+  2. **Silent-success-after-failure:** The flag is set to `true` *before* `await runMigrations(...)`. If migrations throw, the flag stays `true`, the error is logged once, and the next call to `ensureBooted()` is a no-op that returns success without retrying or surfacing the error.
+- **Fix (combined, ~5 lines):**
+  ```ts
+  let bootPromise: Promise<void> | null = null;
+  export function ensureBooted(): Promise<void> {
+    if (!bootPromise) {
+      bootPromise = runMigrations({ ... });
+    }
+    return bootPromise;
+  }
+  ```
+  - Failed promises stay rejected on every `await` — failures propagate.
+  - Then update `app/api/health/route.ts` to `await ensureBooted()` at the top of `GET()` so requests block until migrations finish (cheap after first run — promise already resolved).
+- Schedule: addressing this is "Approved with optional improvements" — not Plan 1 critical, but a UX papercut worth fixing in Plan 6 polish.
