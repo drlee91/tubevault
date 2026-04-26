@@ -55,3 +55,21 @@ Tracked items surfaced during task reviews that were intentionally deferred to a
   playwright-report/
   ```
   Task 4 introduces `vitest run --coverage` which writes to `coverage/`. The `playwright-report/` and `test-results/` lines pre-empt Plan 6's E2E task. Optional but cheap.
+- ✅ Resolved in commit `06d223b` (Task 4).
+
+## From Task 8 review (commit `fa7a5c5`)
+
+### F6 — Backup branch is not exercised by tests (must fix in Task 15 or Plan 6)
+
+- **Where:** `lib/db/migrate.test.ts` — all four tests assert that NO backup file is created. The `dbExisted && pendingCount > 0 → copyFileSync` branch in `lib/db/migrate.ts` is uncovered.
+- **Effect:** A future refactor that inverts the condition or removes `copyFileSync` would not fail any test. The whole point of the runner ("pre-migration backup") has zero positive coverage.
+- **Fix:** Add a fifth test that simulates a pending migration. Either:
+  - **Fixture-based:** create a fake `migrations/` folder with two `.sql` files + a hand-written `meta/_journal.json`, run twice with the second migration appended in between. Verify a `*.backup-*` file appears in the temp dir. OR
+  - **Refactor:** extract `countPendingMigrations(sqlite, migrationsFolder): number` as a pure function and unit-test it directly without invoking Drizzle's migrator. This also removes the `as Array<{hash: string}>` cast (see F7).
+- Schedule: post-Task-15 polish or part of Plan 6 testing pass.
+
+### F7 — Replace unsafe row-cast with `SELECT COUNT(*)` (cosmetic, optional)
+
+- **Where:** `lib/db/migrate.ts` lines 30-32 use `SELECT hash FROM __drizzle_migrations` and cast the result `as Array<{ hash: string }>` even though only the count matters.
+- **Fix:** Replace with `SELECT COUNT(*) AS n FROM __drizzle_migrations` and `as { n: number }`. Same cast unsafety but obviously correct, smaller memory footprint when migration count grows.
+- Trivial, can land alongside any other migrate.ts touch.
