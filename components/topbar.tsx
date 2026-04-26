@@ -3,7 +3,7 @@ import { Settings as SettingsIcon } from "lucide-react";
 
 export function Topbar() {
   return (
-    <header className="flex h-12 items-center justify-between border-b border-[var(--color-border)] px-4">
+    <header className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg)] px-4">
       <Link href="/" className="font-mono text-sm font-semibold tracking-tight">
         TubeVault
       </Link>
