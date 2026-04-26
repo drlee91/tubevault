@@ -177,6 +177,10 @@ export const jobs = sqliteTable(
   },
   (t) => ({
     statusPriorityIdx: index("jobs_status_priority_idx").on(t.status, t.priority),
+    // idx_jobs_claim (status, priority DESC, created_at ASC, next_attempt_at) is
+    // hand-crafted in drizzle/migrations/0001_*.sql — drizzle-kit cannot express
+    // per-column ASC/DESC for SQLite indexes. Do not remove the index from the
+    // SQL file when regenerating migrations.
   }),
 );
 
