@@ -73,3 +73,19 @@ Tracked items surfaced during task reviews that were intentionally deferred to a
 - **Where:** `lib/db/migrate.ts` lines 30-32 use `SELECT hash FROM __drizzle_migrations` and cast the result `as Array<{ hash: string }>` even though only the count matters.
 - **Fix:** Replace with `SELECT COUNT(*) AS n FROM __drizzle_migrations` and `as { n: number }`. Same cast unsafety but obviously correct, smaller memory footprint when migration count grows.
 - Trivial, can land alongside any other migrate.ts touch.
+
+## From Task 11 review (commit `cf45d8c`)
+
+### F8 — Cover untested SettingsService branches (Plan 6 polish)
+
+- **Where:** `lib/services/settings-service.test.ts` — three branches uncovered:
+  1. `setGlobalSyncCron(null)`, `setYtdlpPath(null)`, `setFfmpegPath(null)` → `repo.delete(key)` branch
+  2. `setYtdlpPath("")`, `setFfmpegPath("")`, `setGlobalSyncCron("")` → `nonEmptyString.parse` should throw
+- **Effect:** A future refactor that breaks the null-delete branch or removes the empty-string check would not fail any test.
+- **Fix:** Add 6 tests (3 nullable-delete + 3 empty-string-rejection). Trivial.
+
+### F9 — Document nullable getter semantics (must address before Plan 5 settings forms)
+
+- **Where:** `lib/services/settings-service.ts` `getYtdlpPath()`, `getFfmpegPath()`, `getGlobalSyncCron()`.
+- **Effect:** Returning `null` is ambiguous between "user explicitly cleared" and "never set." Today self-check (Task 12) treats both as "auto-detect," which is fine. Plan 5 may need to distinguish.
+- **Fix:** Add JSDoc `/** Returns null if no override set; caller responsible for fallback. */` on the three getters. Defer the deeper "explicit-null" sentinel design until Plan 5 raises the need.
