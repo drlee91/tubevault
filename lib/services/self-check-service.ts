@@ -1,8 +1,8 @@
 import { mkdirSync, accessSync, constants, existsSync } from "node:fs";
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export type CheckStatus = "ok" | "warn" | "error";
 
@@ -17,11 +17,14 @@ export interface SelfCheckResult {
   checks: CheckResult[];
 }
 
-export type CheckRunner = (cmd: string) => Promise<{ ok: boolean; output?: string }>;
+export type CheckRunner = (
+  file: string,
+  args: string[],
+) => Promise<{ ok: boolean; output?: string }>;
 
-const defaultRunner: CheckRunner = async (cmd) => {
+const defaultRunner: CheckRunner = async (file, args) => {
   try {
-    const { stdout, stderr } = await execAsync(cmd, { timeout: 5000 });
+    const { stdout, stderr } = await execFileAsync(file, args, { timeout: 5000 });
     return { ok: true, output: (stdout || stderr).trim() };
   } catch (err) {
     return { ok: false, output: err instanceof Error ? err.message : String(err) };
@@ -46,8 +49,8 @@ export class SelfCheckService {
 
   async runAll(): Promise<SelfCheckResult> {
     const checks: CheckResult[] = [];
-    checks.push(await this.checkExternal("yt-dlp", `${this.opts.ytdlpPath} --version`));
-    checks.push(await this.checkExternal("ffmpeg", `${this.opts.ffmpegPath} -version`));
+    checks.push(await this.checkExternal("yt-dlp", this.opts.ytdlpPath, ["--version"]));
+    checks.push(await this.checkExternal("ffmpeg", this.opts.ffmpegPath, ["-version"]));
     checks.push(this.checkStoragePath("audio_storage", this.opts.audioStoragePath));
     checks.push(this.checkStoragePath("video_storage", this.opts.videoStoragePath));
     checks.push(this.checkDatabase());
@@ -61,8 +64,8 @@ export class SelfCheckService {
     return { overall: worst, checks };
   }
 
-  private async checkExternal(name: string, cmd: string): Promise<CheckResult> {
-    const result = await this.runner(cmd);
+  private async checkExternal(name: string, file: string, args: string[]): Promise<CheckResult> {
+    const result = await this.runner(file, args);
     if (result.ok) {
       const firstLine = (result.output ?? "").split("\n")[0]?.trim() ?? "";
       return { name, status: "ok", detail: firstLine || "found" };
@@ -94,6 +97,7 @@ export class SelfCheckService {
     if (existsSync(this.opts.dbPath)) {
       return { name: "database", status: "ok", detail: this.opts.dbPath };
     }
+    // Warn (not error): the migration runner creates the DB on first boot.
     return {
       name: "database",
       status: "warn",

@@ -12,9 +12,10 @@ const UNWRITABLE_PATH =
   platform() === "win32" ? "Z:\\nonexistent\\forbidden\\path" : "/nonexistent/forbidden/path";
 
 function makeFakeRunner(map: Record<string, { ok: boolean; output?: string }>): CheckRunner {
-  return async (cmd) => {
-    const entry = map[cmd];
-    if (!entry) return { ok: false, output: `command not found: ${cmd}` };
+  return async (file, args) => {
+    const key = `${file} ${args.join(" ")}`;
+    const entry = map[key];
+    if (!entry) return { ok: false, output: `command not found: ${file}` };
     return entry;
   };
 }
