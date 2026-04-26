@@ -1,0 +1,27 @@
+{
+  "id": "PLBCF2DAC6FFB574DE",
+  "title": "Sample Music Playlist",
+  "uploader": "Sample Channel",
+  "webpage_url": "https://www.youtube.com/playlist?list=PLBCF2DAC6FFB574DE",
+  "_type": "playlist",
+  "entries": [
+    {
+      "_type": "url",
+      "id": "abc111",
+      "title": "Track One",
+      "uploader": "Channel A",
+      "duration": 215,
+      "thumbnails": [{ "url": "https://i.ytimg.com/vi/abc111/hqdefault.jpg" }],
+      "availability": "public"
+    },
+    {
+      "_type": "url",
+      "id": "abc222",
+      "title": "Track Two",
+      "uploader": "Channel B",
+      "duration": 187,
+      "thumbnails": [{ "url": "https://i.ytimg.com/vi/abc222/hqdefault.jpg" }],
+      "availability": "unlisted"
+    }
+  ]
+}

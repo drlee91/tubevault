@@ -1,0 +1,14 @@
+{
+  "fixtures": [
+    {
+      "name": "flat-playlist-music",
+      "url": "https://www.youtube.com/playlist?list=PLBCF2DAC6FFB574DE",
+      "args": ["--flat-playlist", "--dump-single-json", "--no-warnings"]
+    },
+    {
+      "name": "video-public",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "args": ["--dump-json", "--no-warnings", "--skip-download"]
+    }
+  ]
+}
