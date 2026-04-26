@@ -4,3 +4,6 @@ drizzle/migrations
 package-lock.json
 *.db
 *.db-*
+coverage/
+test-results/
+playwright-report/
