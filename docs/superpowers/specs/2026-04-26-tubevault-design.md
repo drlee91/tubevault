@@ -410,15 +410,19 @@ User kann einzelne Videos ohne Playlist hinzufügen via „+ Add ▾ → Video":
 
 Container-Queries via `@tailwindcss/container-queries` für isolierte Komponenten. PWA-fähig (Manifest + Service-Worker für Phase-2-NAS-Deployment).
 
-### 6.7 Design-Sprache (Anti-AI-Slop)
+### 6.7 Design-Sprache (modern, YouTube-adjacent)
 
-- **Aesthetic:** „Minimalist editorial" (Notion / Linear-style)
-- **Colors:** Schwarz-Weiß-Fundament + EIN Akzent-Ton (gedämpftes Sepia/Bronze, kein Default-Blue)
-- **Typography:** Geist oder Inter Tight (UI), Geist Mono (Metadaten)
-- **Spacing:** großzügig auf Page-Level, dichte Track-Listen wie iTunes/Foobar (nicht Spotify-Mobile)
-- **Motion:** sparsam, schnell. Mini-Pulse-Spinner statt Lottie-Festival.
-- **Verboten:** Gradients, Glasmorphism, `rounded-3xl` auf alles, Pill-Hölle in 5 Farben.
-- **Status-Badges:** klein, monospace, lowercase
+- **Aesthetic:** „Modern app UI" — clean neutral, mainstream-modern (näher an YouTube/Vercel als an Notion/Linear). Kein „editorial"-Look, keine Display-Fonts, keine Slab-Mono in der Marke.
+- **Colors:** Schwarz-Weiß-Fundament + EIN dezenter Akzent-Ton (Bronze/Amber-Range, kein Default-Blue, kein YT-Rot — kein Markenkonflikt)
+- **Typography:**
+  - **Sans:** Inter (UI, Headlines, Body) — neutrale, screen-optimierte Geometrie; nicht Geist (zu eigen)
+  - **Mono:** JetBrains Mono — clean, ohne Slab-Serifen; **nur** für technische Inhalte (file paths, IDs, command names, Log-Lines)
+  - **Marke / Wordmark / Navigation / Buttons:** ausnahmslos Sans, niemals Mono
+- **Spacing:** großzügig auf Page-Level, dichte Track-Listen (iTunes/Foobar-Density, nicht Spotify-Mobile-Padding)
+- **Corner-Radius:** subtil (`rounded-md`/`rounded-lg`), nicht `rounded-3xl` Pillen-Look
+- **Motion:** sparsam und schnell; kein Lottie-Festival
+- **Verboten:** Gradients, Glasmorphism, `rounded-3xl` auf alles, Pill-Hölle in 5 Farben, quirky Display-Fonts, Serif-Headlines, Slab-Mono in primärem UI-Text
+- **Status-Badges:** klein, sans (nicht mono), lowercase, dezent gefärbt
 - Eine `docs/design-language.md` wird im ersten UI-Implementation-Schritt angelegt und hält die finale Direction (konkrete Farben, Token-Namen, Spacing-Skala) für Implementer fest
 
 ---

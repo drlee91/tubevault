@@ -4,7 +4,7 @@ import { Settings as SettingsIcon } from "lucide-react";
 export function Topbar() {
   return (
     <header className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg)] px-4">
-      <Link href="/" className="font-mono text-sm font-semibold tracking-tight">
+      <Link href="/" className="text-sm font-bold tracking-tight">
         TubeVault
       </Link>
       <Link
