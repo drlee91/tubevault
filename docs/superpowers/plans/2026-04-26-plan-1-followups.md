@@ -114,3 +114,4 @@ Tracked items surfaced during task reviews that were intentionally deferred to a
   - Then update `app/api/health/route.ts` to `await ensureBooted()` at the top of `GET()` so requests block until migrations finish (cheap after first run — promise already resolved).
 
 - Schedule: addressing this is "Approved with optional improvements" — not Plan 1 critical, but a UX papercut worth fixing in Plan 6 polish.
+- ✅ Resolved in commit `cf30d86` (pre-merge cleanup): switched to cached `Promise<void>` and added `await ensureBooted()` in `/api/health` GET.
