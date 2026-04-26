@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { promises as fs } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { YouTubeAdapter } from "./adapter";
 import type { ExecFileLike } from "./yt-dlp";
@@ -86,5 +87,32 @@ describe("YouTubeAdapter.checkAvailability", () => {
     });
     const probe = await a.checkAvailability("xyz");
     expect(probe.status).toBe("removed");
+  });
+});
+
+describe("YouTubeAdapter.download", () => {
+  it("invokes yt-dlp with audio extraction args and returns file metadata", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "tubevault-"));
+    const audioPath = path.join(tmp, "Track One-abc111.mp3");
+    await fs.writeFile(audioPath, Buffer.alloc(2048));
+
+    let lastArgs: readonly string[] = [];
+    const exec: ExecFileLike = (_f, args, _o, cb) => {
+      lastArgs = args;
+      cb(null, "[ffmpeg] Destination: " + audioPath + "\n", "");
+    };
+    const a = new YouTubeAdapter({ binary: "yt-dlp", execFile: exec });
+    const result = await a.download("abc111", {
+      kind: "audio",
+      audioFormat: "mp3",
+      audioBitrate: 192,
+      outputDir: tmp,
+      filenameStem: "Track One-abc111",
+    });
+    expect(result.filePath).toBe(audioPath);
+    expect(result.format).toBe("mp3");
+    expect(result.fileSizeBytes).toBe(2048);
+    expect(lastArgs).toContain("-x");
+    expect(lastArgs.join(" ")).toContain("--audio-format mp3");
   });
 });

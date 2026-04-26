@@ -100,8 +100,52 @@ export class YouTubeAdapter implements MediaProviderAdapter {
       availabilityReason: null,
     };
   }
-  async download(_externalId: string, _opts: DownloadOpts): Promise<DownloadResult> {
-    throw new Error("download not yet implemented");
+  async download(externalId: string, opts: DownloadOpts): Promise<DownloadResult> {
+    const url = `https://www.youtube.com/watch?v=${externalId}`;
+    const stem = opts.filenameStem;
+    const outPath = `${opts.outputDir}/${stem}.%(ext)s`;
+    const args: string[] =
+      opts.kind === "audio"
+        ? [
+            "-f", "bestaudio",
+            "-x",
+            "--audio-format", opts.audioFormat ?? "mp3",
+            "--audio-quality", `${opts.audioBitrate ?? 192}K`,
+            "-o", outPath,
+            "--no-warnings",
+            url,
+          ]
+        : [
+            "-f", `bestvideo[height<=${(opts.videoQuality ?? "1080p").replace(/p$/, "")}]+bestaudio/best`,
+            "--merge-output-format", opts.videoContainer ?? "mp4",
+            "-o", outPath,
+            "--no-warnings",
+            url,
+          ];
+
+    const stdout = await runYtDlp(args, {
+      binary: this.opts.binary,
+      execFile: this.opts.execFile,
+      timeoutMs: this.opts.timeoutMs ?? 5 * 60 * 1000,
+    });
+
+    // yt-dlp prints destination paths via "[ffmpeg] Destination: …" or "[download] Destination: …"
+    const match = stdout.match(/Destination:\s*(.+)$/m);
+    const filePath = match?.[1]?.trim() ?? `${opts.outputDir}/${stem}.${opts.kind === "audio" ? opts.audioFormat ?? "mp3" : opts.videoContainer ?? "mp4"}`;
+
+    const { promises: nodeFs } = await import("node:fs");
+    const stat = await nodeFs.stat(filePath);
+
+    return {
+      filePath,
+      format: opts.kind === "audio" ? opts.audioFormat ?? "mp3" : opts.videoContainer ?? "mp4",
+      quality:
+        opts.kind === "audio"
+          ? `${opts.audioBitrate ?? 192}kbps`
+          : opts.videoQuality ?? "1080p",
+      fileSizeBytes: stat.size,
+      durationSeconds: 0,
+    };
   }
   async checkAvailability(externalId: string): Promise<AvailabilityProbe> {
     const url = `https://www.youtube.com/watch?v=${externalId}`;
