@@ -6,6 +6,9 @@ import path from "node:path";
 // tests live in the default project; component tests under app/ + components/
 // run under happy-dom.
 export default defineConfig({
+  oxc: {
+    jsx: { runtime: "automatic" },
+  },
   test: {
     setupFiles: ["./tests/setup.ts"],
     coverage: {
