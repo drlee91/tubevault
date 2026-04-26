@@ -32,3 +32,26 @@ Tracked items surfaced during task reviews that were intentionally deferred to a
 - **Where:** `components/ui/badge.tsx` uses raw Tailwind palette classes (`bg-green-100`, `bg-amber-100`, `bg-red-100`) for tones `ok` / `warn` / `error`. Other components in the design system use `var(--color-*)` semantic tokens.
 - **Effect:** Status colors aren't centrally tunable. Changing "the green" requires editing Badge directly.
 - **Fix (deferred):** Add `--color-ok-bg`, `--color-ok-fg`, `--color-warn-bg`, `--color-warn-fg`, `--color-error-bg`, `--color-error-fg` tokens to `globals.css` and switch Badge to use them. Not Plan 1 critical; can be combined with other token cleanup in Plan 6 (polish).
+
+## From Task 3 review (commit `8a9c0ca`)
+
+### F4 — Swap `next lint` for direct `eslint .` (must fix in Task 16)
+
+- **Where:** `package.json` script `"lint": "next lint"`.
+- **Effect:** Next 15.5 prints a deprecation warning on every lint run; `next lint` will be removed in Next 16. Noisy in CI output.
+- **Fix in Task 16:** When wiring CI, also flip the script:
+  ```jsonc
+  "lint": "eslint ."
+  ```
+  The flat config (`eslint.config.mjs`) is automatically picked up by `eslint .` — no config changes needed. Verify `npm run lint` still passes clean (without the deprecation warning), then commit alongside the CI workflow.
+
+### F5 — Extend `.prettierignore` for generated output (relevant in Task 4)
+
+- **Where:** `.prettierignore` covers source-side ignores but not generated artifacts.
+- **Fix in Task 4 (Vitest setup):** Add to `.prettierignore`:
+  ```
+  coverage/
+  test-results/
+  playwright-report/
+  ```
+  Task 4 introduces `vitest run --coverage` which writes to `coverage/`. The `playwright-report/` and `test-results/` lines pre-empt Plan 6's E2E task. Optional but cheap.
