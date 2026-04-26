@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TubeVault
 
-## Getting Started
+> Local archive for YouTube (and later SoundCloud) playlists with a built-in audio/video player. Proactively downloads tracks the moment they enter a watched playlist, so deletions, region-blocks, and channel takedowns can no longer eat your music collection.
 
-First, run the development server:
+## Status
+
+Early development. See `docs/superpowers/specs/` for the design spec and `docs/superpowers/plans/` for the implementation plans.
+
+## Why
+
+YouTube playlists rot. Channels delete videos, owners go private, regions block content. A curated playlist degrades silently over time. TubeVault watches a playlist, downloads each track once, and keeps it playable forever — even after the source disappears.
+
+## Features (Phase 1)
+
+- Add YouTube playlists or standalone videos via URL
+- Download as audio (MP3 / Opus / M4A / FLAC) or video (configurable resolution and codec)
+- Re-sync on demand or on a schedule; status badges show what's been deleted, gone private, or region-blocked
+- Built-in audio + video player with queue, shuffle, repeat, fullscreen mode
+- Per-playlist format overrides; global defaults in Settings
+- Multi-provider-ready architecture (SoundCloud comes in Phase 2)
+
+## Requirements
+
+- Node.js 20+
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) on `$PATH`
+- [ffmpeg](https://ffmpeg.org/) on `$PATH`
+
+## Quick start
 
 ```bash
+git clone https://github.com/<your-username>/tubevault.git
+cd tubevault
+npm install
+cp .env.example .env
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev          # Dev server
+npm test             # Run tests
+npm run lint         # Lint
+npm run typecheck    # TypeScript check
+npm run format       # Prettier write
+```
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+See [`docs/superpowers/specs/2026-04-26-tubevault-design.md`](docs/superpowers/specs/2026-04-26-tubevault-design.md).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+MIT — see [LICENSE](LICENSE).
 
-## Deploy on Vercel
+## Disclaimer
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+TubeVault is intended for **personal, private use only**. Downloading copyrighted material may violate the terms of service of source platforms and applicable copyright law in your jurisdiction. You are responsible for ensuring your use complies with local law and the rights of creators. The authors take no responsibility for misuse.
