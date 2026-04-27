@@ -21,11 +21,11 @@ const videoFixture = {
   thumbnailUrl: null,
   availabilityStatus: "available" as const,
   availabilityReason: null,
-  availabilityChangedAt: new Date("2024-01-01T00:00:00Z"),
-  firstSeenAt: new Date("2024-01-01T00:00:00Z"),
-  lastSeenAt: new Date("2024-01-01T00:00:00Z"),
-  createdAt: new Date("2024-01-01T00:00:00Z"),
-  updatedAt: new Date("2024-01-01T00:00:00Z"),
+  availabilityChangedAt: "2024-01-01T00:00:00.000Z",
+  firstSeenAt: "2024-01-01T00:00:00.000Z",
+  lastSeenAt: "2024-01-01T00:00:00.000Z",
+  createdAt: "2024-01-01T00:00:00.000Z",
+  updatedAt: "2024-01-01T00:00:00.000Z",
 };
 
 describe("StandaloneList", () => {
