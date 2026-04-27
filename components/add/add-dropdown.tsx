@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, ListMusic, Video } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
@@ -14,7 +15,11 @@ export function AddDropdown() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] disabled:pointer-events-none disabled:opacity-50 bg-[var(--color-fg)] text-[var(--color-bg)] hover:opacity-90 h-8 px-3">
+        <DropdownMenuTrigger
+          render={
+            <button className={buttonVariants({ variant: "default", size: "sm" })} />
+          }
+        >
           <Plus className="h-4 w-4" /> Add
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
