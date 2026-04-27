@@ -169,9 +169,10 @@ export async function createTestBootContext(): Promise<TestBootContext> {
   const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, queue, registry });
   const videoService = new VideoService({ videoRepo, queue, registry });
 
-  // Worker pool wired but NOT started — tests should not process real jobs.
+  // Worker pool created but NOT wired to the queue — tests must not process jobs.
+  // Skipping queue.attachWorker() prevents the signal() path from dispatching and
+  // failing enqueued jobs when no handlers are registered.
   const workerPool = new WorkerPool(queue, new Map(), { maxConcurrency: 1 });
-  queue.attachWorker(workerPool);
 
   return {
     dbPath,

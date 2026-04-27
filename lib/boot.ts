@@ -28,6 +28,7 @@ export interface BootContext {
   selfCheckService: SelfCheckService;
   registry: ProviderRegistry;
   queue: JobQueue;
+  jobRepo: JobRepo;
   workerPool: WorkerPool;
   syncService: SyncService;
   downloadService: DownloadService;
@@ -141,6 +142,7 @@ async function doBoot(): Promise<BootContext> {
     selfCheckService,
     registry,
     queue,
+    jobRepo,
     workerPool,
     syncService,
     downloadService,
