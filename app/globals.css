@@ -11,6 +11,14 @@
   --color-muted-bg: oklch(0.96 0 0);
   --color-border: oklch(0.9 0 0);
   --color-accent: oklch(0.55 0.1 60);
+  --color-status-available: oklch(0.7 0.13 145);
+  --color-status-private: oklch(0.7 0.12 60);
+  --color-status-removed: oklch(0.6 0.15 25);
+  --color-status-unknown: oklch(0.55 0 0);
+  --color-status-bg-available: color-mix(in oklch, oklch(0.7 0.13 145) 12%, transparent);
+  --color-status-bg-private: color-mix(in oklch, oklch(0.7 0.12 60) 12%, transparent);
+  --color-status-bg-removed: color-mix(in oklch, oklch(0.6 0.15 25) 12%, transparent);
+  --color-status-bg-unknown: color-mix(in oklch, oklch(0.55 0 0) 12%, transparent);
 
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -24,6 +32,10 @@
     --color-muted-bg: oklch(0.2 0 0);
     --color-border: oklch(0.3 0 0);
     --color-accent: oklch(0.7 0.1 60);
+    --color-status-available: oklch(0.7 0.13 145);
+    --color-status-private: oklch(0.7 0.12 60);
+    --color-status-removed: oklch(0.6 0.15 25);
+    --color-status-unknown: oklch(0.55 0 0);
   }
 }
 
