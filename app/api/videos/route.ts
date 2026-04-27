@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { ensureBooted } from "@/lib/boot";
 import { AddVideoBody } from "@/lib/api/schemas";
-import { parseJsonBody, jsonError } from "@/lib/api/helpers";
+import { parseJsonBody, jsonError, ensureBootedOrTest } from "@/lib/api/helpers";
+
+export async function GET(_req: Request) {
+  const ctx = await ensureBootedOrTest();
+  const videos = ctx.videoService.listStandalone();
+  return Response.json({ videos });
+}
 
 export async function POST(req: Request) {
   try {
