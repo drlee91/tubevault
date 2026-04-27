@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { ensureBooted } from "@/lib/boot";
 import { PlaylistList } from "@/components/playlists/playlist-list";
 import { PlaylistsTabs } from "@/components/playlists/playlists-tabs";
 import { StandaloneList } from "@/components/playlists/standalone-list";
+import { SkeletonRow } from "@/components/shared/skeleton-row";
 
 export default async function PlaylistsPage() {
   const ctx = await ensureBooted();
@@ -11,10 +13,12 @@ export default async function PlaylistsPage() {
       <header>
         <h1 className="text-2xl font-semibold">Playlists</h1>
       </header>
-      <PlaylistsTabs
-        playlists={<PlaylistList items={items} />}
-        standalone={<StandaloneList />}
-      />
+      <Suspense fallback={<SkeletonRow />}>
+        <PlaylistsTabs
+          playlists={<PlaylistList items={items} />}
+          standalone={<StandaloneList />}
+        />
+      </Suspense>
     </div>
   );
 }
