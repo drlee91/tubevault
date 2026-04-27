@@ -7,8 +7,11 @@ import type { PlaylistStatsRow } from "@/lib/services/playlist-service";
 export function PlaylistCard({ p }: { p: PlaylistStatsRow }) {
   const syncing = p.activeSyncRunId !== null;
   return (
-    <Link href={`/playlists/${p.id}`}>
-      <Card className="hover:border-[var(--color-accent)]">
+    <Link
+      href={`/playlists/${p.id}`}
+      className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+    >
+      <Card className="transition-colors hover:border-[var(--color-accent)]">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <ListMusic className="h-5 w-5 text-[var(--color-muted)]" />
