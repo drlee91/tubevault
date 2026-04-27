@@ -1,6 +1,7 @@
 import type { PlaylistRepo, PlaylistRow, PlaylistStatsRow } from "@/lib/db/repositories/playlist-repo";
 import type { PlaylistItemRepo, PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
 import type { SyncRunRepo } from "@/lib/db/repositories/sync-run-repo";
+import type { MediaFileRepo } from "@/lib/db/repositories/media-file-repo";
 import type { JobQueue } from "@/lib/jobs/queue";
 import type { ProviderRegistry } from "@/lib/providers/registry";
 
@@ -49,10 +50,30 @@ export interface CreatePlaylistInput {
   defaultFormat: "audio" | "video";
 }
 
+export interface RecentActivityItem {
+  id: number;
+  playlistId: number;
+  playlistTitle: string;
+  status: "running" | "success" | "partial" | "failed";
+  videosAdded: number;
+  videosRemoved: number;
+  videosUnavailable: number;
+  finishedAt: string | null;
+  triggeredBy: string;
+}
+
+export interface DashboardStats {
+  playlists: number;
+  trackedVideos: number;
+  availablePct: number;
+  diskBytes: number;
+}
+
 export interface PlaylistServiceDeps {
   playlistRepo: PlaylistRepo;
   itemRepo: PlaylistItemRepo;
   syncRunRepo?: SyncRunRepo;
+  mediaFileRepo?: MediaFileRepo;
   queue: JobQueue;
   registry: ProviderRegistry;
 }
@@ -97,6 +118,47 @@ export class PlaylistService {
 
   listWithStats(): PlaylistStatsRow[] {
     return this.d.playlistRepo.listWithStats();
+  }
+
+  dashboardStats(): DashboardStats {
+    const playlists = this.d.playlistRepo.list().length;
+
+    // Count DISTINCT video_id in playlist_items WHERE in_playlist = 1
+    const trackedRows = this.d.itemRepo.countTrackedVideos();
+    const trackedVideos = trackedRows.tracked;
+    const availableTracked = trackedRows.available;
+
+    const availablePct =
+      trackedVideos === 0 ? 100 : Math.round((availableTracked / trackedVideos) * 100);
+
+    let diskBytes = 0;
+    if (this.d.mediaFileRepo) {
+      const usage = this.d.mediaFileRepo.usageByKind();
+      diskBytes = usage.audio.totalBytes + usage.video.totalBytes;
+    }
+
+    return { playlists, trackedVideos, availablePct, diskBytes };
+  }
+
+  recentActivity(limit: number): RecentActivityItem[] {
+    if (!this.d.syncRunRepo) return [];
+    const rows = this.d.syncRunRepo.recentWithPlaylist(limit);
+    return rows.map((r) => ({
+      id: r.run.id,
+      playlistId: r.run.playlistId ?? 0,
+      playlistTitle: r.playlistTitle ?? "(deleted playlist)",
+      status: r.run.status,
+      videosAdded: r.run.videosAdded,
+      videosRemoved: r.run.videosRemoved,
+      videosUnavailable: r.run.videosUnavailable,
+      finishedAt:
+        r.run.finishedAt != null
+          ? r.run.finishedAt instanceof Date
+            ? r.run.finishedAt.toISOString()
+            : String(r.run.finishedAt)
+          : null,
+      triggeredBy: r.run.triggeredBy,
+    }));
   }
 
   getDetailFull(id: number): PlaylistDetailDto | null {

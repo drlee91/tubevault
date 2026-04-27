@@ -166,7 +166,7 @@ export async function createTestBootContext(): Promise<TestBootContext> {
     }),
   });
 
-  const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, queue, registry });
+  const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, mediaFileRepo: mediaRepo, queue, registry });
   const videoService = new VideoService({ videoRepo, queue, registry });
 
   // Worker pool created but NOT wired to the queue — tests must not process jobs.

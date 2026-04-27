@@ -123,7 +123,7 @@ async function doBoot(): Promise<BootContext> {
     }),
   });
 
-  const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, queue, registry });
+  const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, mediaFileRepo: mediaRepo, queue, registry });
   const videoService = new VideoService({ videoRepo, queue, registry });
 
   const handlers = new Map<JobType, JobHandler>([

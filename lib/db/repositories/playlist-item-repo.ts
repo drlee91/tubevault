@@ -76,6 +76,21 @@ export class PlaylistItemRepo {
     this.db.delete(playlistItems).where(eq(playlistItems.playlistId, playlistId)).run();
   }
 
+  countTrackedVideos(): { tracked: number; available: number } {
+    const row = this.db.get<{ tracked: number; available: number }>(sql`
+      SELECT
+        COUNT(DISTINCT pi.video_id) AS tracked,
+        COUNT(DISTINCT CASE WHEN v.availability_status = 'available' THEN pi.video_id END) AS available
+      FROM playlist_items pi
+      JOIN videos v ON v.id = pi.video_id
+      WHERE pi.in_playlist = 1
+    `);
+    return {
+      tracked: Number(row?.tracked ?? 0),
+      available: Number(row?.available ?? 0),
+    };
+  }
+
   listWithJoinsForDetail(playlistId: number): PlaylistDetailItem[] {
     const rows = this.db.all(sql`
       SELECT

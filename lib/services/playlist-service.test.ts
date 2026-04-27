@@ -266,3 +266,221 @@ describe("getDetailFull", () => {
     }
   });
 });
+
+describe("dashboardStats", () => {
+  it("returns zeroes when DB is empty", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const stats = ctx.playlistService.dashboardStats();
+      expect(stats.playlists).toBe(0);
+      expect(stats.trackedVideos).toBe(0);
+      expect(stats.availablePct).toBe(100); // vacuously available
+      expect(stats.diskBytes).toBe(0);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("counts playlists, tracked videos, available pct, and disk bytes", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      // Seed 2 playlists
+      const pl1 = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_DASH1",
+        url: "https://www.youtube.com/playlist?list=PL_DASH1",
+        defaultFormat: "audio",
+      });
+      const pl2 = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_DASH2",
+        url: "https://www.youtube.com/playlist?list=PL_DASH2",
+        defaultFormat: "audio",
+      });
+
+      // 3 videos: v1=available, v2=available, v3=removed
+      const v1 = ctx.videoRepo.upsert({
+        provider: "youtube", externalId: "DASH_V1", title: "V1",
+        channelTitle: null, durationSeconds: null, thumbnailUrl: null,
+        availabilityStatus: "available",
+      });
+      const v2 = ctx.videoRepo.upsert({
+        provider: "youtube", externalId: "DASH_V2", title: "V2",
+        channelTitle: null, durationSeconds: null, thumbnailUrl: null,
+        availabilityStatus: "available",
+      });
+      const v3 = ctx.videoRepo.upsert({
+        provider: "youtube", externalId: "DASH_V3", title: "V3",
+        channelTitle: null, durationSeconds: null, thumbnailUrl: null,
+        availabilityStatus: "removed",
+      });
+
+      // pl1 has v1, v2 (in_playlist=true) + v3 (removed from playlist)
+      ctx.itemRepo.upsertActive(pl1, v1, 0);
+      ctx.itemRepo.upsertActive(pl1, v2, 1);
+      ctx.itemRepo.upsertActive(pl1, v3, 2);
+      ctx.itemRepo.markRemoved(pl1, v3); // v3 not in_playlist — should not count as tracked
+
+      // pl2 has v1 (same video, should count once due to DISTINCT)
+      ctx.itemRepo.upsertActive(pl2, v1, 0);
+
+      // media files: 1000 audio bytes + 2000 video bytes
+      ctx.mediaFileRepo.insert({
+        videoId: v1,
+        kind: "audio",
+        filePath: "/tmp/v1.mp3",
+        format: "mp3",
+        quality: "192",
+        fileSizeBytes: 1000,
+        durationSeconds: 60,
+      });
+      ctx.mediaFileRepo.insert({
+        videoId: v2,
+        kind: "video",
+        filePath: "/tmp/v2.mp4",
+        format: "mp4",
+        quality: "1080p",
+        fileSizeBytes: 2000,
+        durationSeconds: 120,
+      });
+
+      const stats = ctx.playlistService.dashboardStats();
+      expect(stats.playlists).toBe(2);
+      // v1 and v2 are tracked (in_playlist=true); v3 is removed from playlist
+      // v1 appears in both playlists but DISTINCT => still 2
+      expect(stats.trackedVideos).toBe(2);
+      // v1=available, v2=available => 2/2 = 100%
+      expect(stats.availablePct).toBe(100);
+      expect(stats.diskBytes).toBe(3000);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("rounds availablePct to integer and handles partial availability", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const pl = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_PCT",
+        url: "https://www.youtube.com/playlist?list=PL_PCT",
+        defaultFormat: "audio",
+      });
+      const v1 = ctx.videoRepo.upsert({
+        provider: "youtube", externalId: "PCT_V1", title: "V1",
+        channelTitle: null, durationSeconds: null, thumbnailUrl: null,
+        availabilityStatus: "available",
+      });
+      const v2 = ctx.videoRepo.upsert({
+        provider: "youtube", externalId: "PCT_V2", title: "V2",
+        channelTitle: null, durationSeconds: null, thumbnailUrl: null,
+        availabilityStatus: "removed",
+      });
+      const v3 = ctx.videoRepo.upsert({
+        provider: "youtube", externalId: "PCT_V3", title: "V3",
+        channelTitle: null, durationSeconds: null, thumbnailUrl: null,
+        availabilityStatus: "removed",
+      });
+      ctx.itemRepo.upsertActive(pl, v1, 0);
+      ctx.itemRepo.upsertActive(pl, v2, 1);
+      ctx.itemRepo.upsertActive(pl, v3, 2);
+
+      const stats = ctx.playlistService.dashboardStats();
+      expect(stats.trackedVideos).toBe(3);
+      // 1/3 = 33.33... => rounds to 33
+      expect(stats.availablePct).toBe(33);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+});
+
+describe("recentActivity", () => {
+  it("returns empty array when no sync runs", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const items = ctx.playlistService.recentActivity(10);
+      expect(items).toEqual([]);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("returns ordered runs with playlist title and correct shape", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const pl1 = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_ACT1",
+        url: "https://www.youtube.com/playlist?list=PL_ACT1",
+        defaultFormat: "audio",
+        title: "My Playlist",
+      });
+      const pl2 = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_ACT2",
+        url: "https://www.youtube.com/playlist?list=PL_ACT2",
+        defaultFormat: "audio",
+        title: "Other Playlist",
+      });
+
+      // Start two runs — run1 for pl1, run2 for pl2
+      const run1 = ctx.syncRunRepo.startRun({ playlistId: pl1, triggeredBy: "manual" });
+      ctx.syncRunRepo.finishRun(run1, {
+        status: "success",
+        stats: { added: 5, removed: 1, unchanged: 0, unavailable: 2, downloaded: 0 },
+        errorLog: [],
+      });
+      const run2 = ctx.syncRunRepo.startRun({ playlistId: pl2, triggeredBy: "schedule" });
+      ctx.syncRunRepo.finishRun(run2, {
+        status: "partial",
+        stats: { added: 0, removed: 0, unchanged: 3, unavailable: 1, downloaded: 0 },
+        errorLog: [],
+      });
+
+      const items = ctx.playlistService.recentActivity(10);
+      expect(items).toHaveLength(2);
+
+      const run1Item = items.find((i) => i.id === run1)!;
+      expect(run1Item).toBeDefined();
+      expect(run1Item.playlistTitle).toBe("My Playlist");
+      expect(run1Item.status).toBe("success");
+      expect(run1Item.videosAdded).toBe(5);
+      expect(run1Item.videosRemoved).toBe(1);
+      expect(run1Item.finishedAt).not.toBeNull();
+
+      const run2Item = items.find((i) => i.id === run2)!;
+      expect(run2Item).toBeDefined();
+      expect(run2Item.playlistTitle).toBe("Other Playlist");
+      expect(run2Item.status).toBe("partial");
+      expect(run2Item.videosUnavailable).toBe(1);
+      expect(run2Item.triggeredBy).toBe("schedule");
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("respects the limit parameter", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const pl = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_LIM",
+        url: "https://www.youtube.com/playlist?list=PL_LIM",
+        defaultFormat: "audio",
+      });
+      for (let i = 0; i < 5; i++) {
+        const runId = ctx.syncRunRepo.startRun({ playlistId: pl, triggeredBy: "manual" });
+        ctx.syncRunRepo.finishRun(runId, {
+          status: "success",
+          stats: { added: 0, removed: 0, unchanged: 0, unavailable: 0, downloaded: 0 },
+          errorLog: [],
+        });
+      }
+      const items = ctx.playlistService.recentActivity(3);
+      expect(items).toHaveLength(3);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+});
