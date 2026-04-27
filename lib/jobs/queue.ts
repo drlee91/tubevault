@@ -94,4 +94,12 @@ export class JobQueue {
       .run();
     return result.changes;
   }
+
+  signal(): void {
+    this.worker?.signal();
+  }
+
+  byId(id: number): import("./types").JobRow | null {
+    return this.repo.byId(id);
+  }
 }
