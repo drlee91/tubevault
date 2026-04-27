@@ -36,7 +36,7 @@ export default defineConfig({
         test: {
           name: "dom",
           environment: "happy-dom",
-          include: ["app/**/*.test.tsx", "components/**/*.test.tsx"],
+          include: ["app/**/*.test.tsx", "components/**/*.test.tsx", "lib/client/**/*.test.tsx"],
         },
       },
     ],
