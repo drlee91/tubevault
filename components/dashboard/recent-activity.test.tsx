@@ -44,9 +44,15 @@ describe("RecentActivity", () => {
     expect(screen.getByText("running")).toBeInTheDocument();
   });
 
-  it("renders JobStatusPill for partial status (shows completed)", () => {
+  it("renders JobStatusPill for partial status (shows partial)", () => {
     render(<RecentActivity items={[makeItem({ status: "partial" })]} />);
-    expect(screen.getByText("completed")).toBeInTheDocument();
+    expect(screen.getByText("partial")).toBeInTheDocument();
+  });
+
+  it("renders orphan item (playlistId null) as non-link", () => {
+    render(<RecentActivity items={[makeItem({ playlistId: null, playlistTitle: "(deleted playlist)" })]} />);
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.getByText("(deleted playlist)")).toBeInTheDocument();
   });
 
   it("renders video counts", () => {

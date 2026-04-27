@@ -6,7 +6,7 @@ import { Activity } from "lucide-react";
 
 interface Item {
   id: number;
-  playlistId: number;
+  playlistId: number | null;
   playlistTitle: string;
   status: "running" | "success" | "partial" | "failed";
   videosAdded: number;
@@ -20,6 +20,13 @@ interface Props {
   items: Item[];
 }
 
+const pillStatus = {
+  running: "running",
+  failed: "failed",
+  partial: "partial",
+  success: "completed",
+} as const;
+
 export function RecentActivity({ items }: Props) {
   if (items.length === 0) {
     return (
@@ -32,32 +39,37 @@ export function RecentActivity({ items }: Props) {
   }
   return (
     <div className="space-y-2">
-      {items.map((it) => (
-        <Link
-          key={it.id}
-          href={`/playlists/${it.playlistId}`}
-          className="flex items-center gap-3 rounded-md border border-[var(--color-border)] p-3 hover:bg-[var(--color-muted-bg)]"
-        >
-          <JobStatusPill
-            status={
-              it.status === "running"
-                ? "running"
-                : it.status === "failed"
-                  ? "failed"
-                  : "completed"
-            }
-          />
-          <span className="flex-1 text-sm">
-            {it.playlistTitle}
-            <span className="ml-2 text-[var(--color-muted)]">
-              +{it.videosAdded} −{it.videosRemoved} ⛔{it.videosUnavailable}
+      {items.map((it) => {
+        const body = (
+          <>
+            <JobStatusPill status={pillStatus[it.status]} />
+            <span className="flex-1 text-sm">
+              {it.playlistTitle}
+              <span className="ml-2 text-[var(--color-muted)]">
+                +{it.videosAdded} −{it.videosRemoved} ⛔{it.videosUnavailable}
+              </span>
             </span>
-          </span>
-          <span className="text-xs text-[var(--color-muted)]">
-            <RelativeTime iso={it.finishedAt} />
-          </span>
-        </Link>
-      ))}
+            <span className="text-xs text-[var(--color-muted)]">
+              <RelativeTime iso={it.finishedAt} />
+            </span>
+          </>
+        );
+        const baseClass =
+          "flex items-center gap-3 rounded-md border border-[var(--color-border)] p-3";
+        return it.playlistId != null ? (
+          <Link
+            key={it.id}
+            href={`/playlists/${it.playlistId}`}
+            className={`${baseClass} hover:bg-[var(--color-muted-bg)]`}
+          >
+            {body}
+          </Link>
+        ) : (
+          <div key={it.id} className={`${baseClass} opacity-70`}>
+            {body}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -1,8 +1,22 @@
 import type { ComponentProps } from "react";
-import { Clock, Loader2, CheckCircle2, AlertCircle, XCircle, type LucideIcon } from "lucide-react";
+import {
+  Clock,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type JobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
+export type JobStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "partial";
 
 const map: Record<JobStatus, { label: string; icon: LucideIcon; classes: string; spin?: boolean }> = {
   queued: {
@@ -32,6 +46,11 @@ const map: Record<JobStatus, { label: string; icon: LucideIcon; classes: string;
     label: "cancelled",
     icon: XCircle,
     classes: "bg-[var(--color-muted-bg)] text-[var(--color-muted)]",
+  },
+  partial: {
+    label: "partial",
+    icon: AlertTriangle,
+    classes: "bg-[var(--color-status-bg-private)] text-[var(--color-status-private)]",
   },
 };
 

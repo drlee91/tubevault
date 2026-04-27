@@ -52,7 +52,7 @@ export interface CreatePlaylistInput {
 
 export interface RecentActivityItem {
   id: number;
-  playlistId: number;
+  playlistId: number | null;
   playlistTitle: string;
   status: "running" | "success" | "partial" | "failed";
   videosAdded: number;
@@ -145,7 +145,7 @@ export class PlaylistService {
     const rows = this.d.syncRunRepo.recentWithPlaylist(limit);
     return rows.map((r) => ({
       id: r.run.id,
-      playlistId: r.run.playlistId ?? 0,
+      playlistId: r.run.playlistId,
       playlistTitle: r.playlistTitle ?? "(deleted playlist)",
       status: r.run.status,
       videosAdded: r.run.videosAdded,

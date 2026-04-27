@@ -9,6 +9,7 @@ describe("JobStatusPill", () => {
     ["completed", "completed"],
     ["failed", "failed"],
     ["cancelled", "cancelled"],
+    ["partial", "partial"],
   ] as const)("renders %s", (status, label) => {
     render(<JobStatusPill status={status} />);
     expect(screen.getByText(label)).toBeInTheDocument();

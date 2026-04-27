@@ -484,6 +484,7 @@ describe("recentActivity", () => {
       const orphan = items.find((i) => i.id === runId)!;
       expect(orphan).toBeDefined();
       expect(orphan.playlistTitle).toBe("(deleted playlist)");
+      expect(orphan.playlistId).toBeNull();
     } finally {
       ctx.cleanup();
     }
