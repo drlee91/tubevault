@@ -136,4 +136,21 @@ describe("JobsTab", () => {
     await user.click(screen.getByRole("button", { name: "all" }));
     expect(replace).toHaveBeenCalledWith("/activity?tab=jobs");
   });
+
+  it("does not duplicate tab param when tab=jobs is already in URL", async () => {
+    searchParamsValue = new URLSearchParams("tab=jobs");
+    vi.spyOn(useJobsModule, "useJobs").mockReturnValue({
+      data: baseJobsList,
+      error: undefined,
+      mutate: vi.fn(),
+      isLoading: false,
+      isValidating: false,
+    } as ReturnType<typeof useJobsModule.useJobs>);
+
+    const user = userEvent.setup();
+    render(<JobsTab />);
+
+    await user.click(screen.getByRole("button", { name: "failed" }));
+    expect(replace).toHaveBeenCalledWith("/activity?tab=jobs&status=failed");
+  });
 });

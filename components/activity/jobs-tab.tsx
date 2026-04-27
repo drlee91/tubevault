@@ -19,6 +19,7 @@ export function JobsTab() {
 
   function setFilter(f: (typeof FILTERS)[number]) {
     const next = new URLSearchParams(sp.toString());
+    next.delete("tab");
     if (f === "all") next.delete("status"); else next.set("status", f);
     router.replace(`/activity?tab=jobs${next.toString() ? "&" + next.toString() : ""}`);
   }
