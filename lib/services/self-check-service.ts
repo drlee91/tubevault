@@ -1,4 +1,4 @@
-import { mkdirSync, accessSync, constants, existsSync } from "node:fs";
+import { mkdirSync, accessSync, constants, existsSync, statSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -91,6 +91,15 @@ export class SelfCheckService {
         detail: `${p}: ${err instanceof Error ? err.message : String(err)}`,
       };
     }
+  }
+
+  async checkPathWritable(p: string): Promise<boolean> {
+    try {
+      if (!existsSync(p)) return false;
+      if (!statSync(p).isDirectory()) return false;
+      accessSync(p, constants.W_OK);
+      return true;
+    } catch { return false; }
   }
 
   private checkDatabase(): CheckResult {

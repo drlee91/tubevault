@@ -154,4 +154,41 @@ describe("SelfCheckService", () => {
     const result = await svc.runAll();
     expect(result.overall).toBe("ok");
   });
+
+  describe("checkPathWritable", () => {
+    it("returns true for an existing writable directory", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+      });
+      expect(await svc.checkPathWritable(tempDir)).toBe(true);
+    });
+
+    it("returns false for a non-existent path", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+      });
+      expect(await svc.checkPathWritable(UNWRITABLE_PATH)).toBe(false);
+    });
+
+    it("returns false for a file (not a directory)", async () => {
+      const filePath = path.join(tempDir, "regular-file.txt");
+      writeFileSync(filePath, "hello");
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+      });
+      expect(await svc.checkPathWritable(filePath)).toBe(false);
+    });
+  });
 });
