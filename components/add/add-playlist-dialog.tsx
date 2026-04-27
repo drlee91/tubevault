@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { addPlaylistAction } from "@/lib/actions/playlist-actions";
 
 const schema = z.object({
@@ -70,7 +69,7 @@ export function AddPlaylistDialog({ open, onOpenChange }: Props) {
             />
 
             <fieldset className="space-y-2">
-              <Label>Default format</Label>
+              <legend className="text-sm font-medium">Default format</legend>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <input type="radio" value="audio" {...form.register("defaultFormat")} />
