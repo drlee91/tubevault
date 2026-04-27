@@ -1,7 +1,27 @@
-import type { PlaylistRepo, PlaylistRow } from "@/lib/db/repositories/playlist-repo";
-import type { PlaylistItemRepo } from "@/lib/db/repositories/playlist-item-repo";
+import type { PlaylistRepo, PlaylistRow, PlaylistStatsRow } from "@/lib/db/repositories/playlist-repo";
+import type { PlaylistItemRepo, PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
+import type { SyncRunRepo } from "@/lib/db/repositories/sync-run-repo";
 import type { JobQueue } from "@/lib/jobs/queue";
 import type { ProviderRegistry } from "@/lib/providers/registry";
+
+export type { PlaylistStatsRow, PlaylistDetailItem };
+
+export interface PlaylistDetailDto {
+  playlist: PlaylistStatsRow;
+  items: PlaylistDetailItem[];
+  recentSyncRuns: Array<{
+    id: number;
+    startedAt: string;
+    finishedAt: string | null;
+    status: string;
+    videosAdded: number;
+    videosRemoved: number;
+    videosUnavailable: number;
+    videosDownloaded: number;
+    triggeredBy: string;
+    errorLog: unknown;
+  }>;
+}
 
 export class ProviderUnsupportedError extends Error {
   constructor(public readonly url: string) {
@@ -32,6 +52,7 @@ export interface CreatePlaylistInput {
 export interface PlaylistServiceDeps {
   playlistRepo: PlaylistRepo;
   itemRepo: PlaylistItemRepo;
+  syncRunRepo?: SyncRunRepo;
   queue: JobQueue;
   registry: ProviderRegistry;
 }
@@ -72,5 +93,32 @@ export class PlaylistService {
   async delete(id: number): Promise<void> {
     this.d.itemRepo.deleteByPlaylist(id);
     this.d.playlistRepo.delete(id);
+  }
+
+  listWithStats(): PlaylistStatsRow[] {
+    return this.d.playlistRepo.listWithStats();
+  }
+
+  getDetailFull(id: number): PlaylistDetailDto | null {
+    const playlist = this.d.playlistRepo.byIdWithStats(id);
+    if (!playlist) return null;
+    const items = this.d.itemRepo.listWithJoinsForDetail(id);
+    const recentSyncRuns = this.d.syncRunRepo
+      ? this.d.syncRunRepo.recentByPlaylist(id, 10).map((r) => ({
+          id: r.id,
+          startedAt: r.startedAt instanceof Date ? r.startedAt.toISOString() : String(r.startedAt),
+          finishedAt: r.finishedAt != null
+            ? (r.finishedAt instanceof Date ? r.finishedAt.toISOString() : String(r.finishedAt))
+            : null,
+          status: r.status,
+          videosAdded: r.videosAdded,
+          videosRemoved: r.videosRemoved,
+          videosUnavailable: r.videosUnavailable,
+          videosDownloaded: r.videosDownloaded,
+          triggeredBy: r.triggeredBy,
+          errorLog: r.errorLog,
+        }))
+      : [];
+    return { playlist, items, recentSyncRuns };
   }
 }

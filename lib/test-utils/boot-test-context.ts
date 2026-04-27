@@ -99,6 +99,13 @@ export interface TestBootContext {
   downloadService: DownloadService;
   playlistService: PlaylistService;
   videoService: VideoService;
+  // Individual repos exposed for test seeding
+  playlistRepo: PlaylistRepo;
+  videoRepo: VideoRepo;
+  itemRepo: PlaylistItemRepo;
+  mediaFileRepo: MediaFileRepo;
+  syncRunRepo: SyncRunRepo;
+  jobRepo: JobRepo;
   cleanup: () => void;
 }
 
@@ -159,7 +166,7 @@ export async function createTestBootContext(): Promise<TestBootContext> {
     }),
   });
 
-  const playlistService = new PlaylistService({ playlistRepo, itemRepo, queue, registry });
+  const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, queue, registry });
   const videoService = new VideoService({ videoRepo, queue, registry });
 
   // Worker pool wired but NOT started — tests should not process real jobs.
@@ -178,6 +185,12 @@ export async function createTestBootContext(): Promise<TestBootContext> {
     downloadService,
     playlistService,
     videoService,
+    playlistRepo,
+    videoRepo,
+    itemRepo,
+    mediaFileRepo: mediaRepo,
+    syncRunRepo,
+    jobRepo,
     cleanup: () => sqlite.close(),
   };
 }
