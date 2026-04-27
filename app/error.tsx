@@ -2,7 +2,7 @@
 
 import { ErrorCard } from "@/components/shared/error-card";
 
-export default function GlobalError({
+export default function RouteError({
   error,
   reset,
 }: {

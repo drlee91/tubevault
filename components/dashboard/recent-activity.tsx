@@ -50,7 +50,7 @@ export function RecentActivity({ items }: Props) {
           <span className="flex-1 text-sm">
             {it.playlistTitle}
             <span className="ml-2 text-[var(--color-muted)]">
-              +{it.videosAdded} -{it.videosRemoved} &#x26D4;{it.videosUnavailable}
+              +{it.videosAdded} −{it.videosRemoved} ⛔{it.videosUnavailable}
             </span>
           </span>
           <span className="text-xs text-[var(--color-muted)]">

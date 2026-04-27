@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { sql } from "drizzle-orm";
 import { createTestDb } from "@/lib/db/__tests__/test-db";
 import { PlaylistRepo } from "@/lib/db/repositories/playlist-repo";
 import { PlaylistItemRepo } from "@/lib/db/repositories/playlist-item-repo";
@@ -455,6 +456,34 @@ describe("recentActivity", () => {
       expect(run2Item.status).toBe("partial");
       expect(run2Item.videosUnavailable).toBe(1);
       expect(run2Item.triggeredBy).toBe("schedule");
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("falls back to '(deleted playlist)' when join yields no playlist", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const pl = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_ORPHAN",
+        url: "https://www.youtube.com/playlist?list=PL_ORPHAN",
+        defaultFormat: "audio",
+        title: "Will Be Orphaned",
+      });
+      const runId = ctx.syncRunRepo.startRun({ playlistId: pl, triggeredBy: "manual" });
+      ctx.syncRunRepo.finishRun(runId, {
+        status: "success",
+        stats: { added: 1, removed: 0, unchanged: 0, unavailable: 0, downloaded: 0 },
+        errorLog: [],
+      });
+      // Simulate orphaned sync_run: nullify playlist_id (column is nullable).
+      ctx.db.run(sql`UPDATE sync_runs SET playlist_id = NULL WHERE id = ${runId}`);
+
+      const items = ctx.playlistService.recentActivity(10);
+      const orphan = items.find((i) => i.id === runId)!;
+      expect(orphan).toBeDefined();
+      expect(orphan.playlistTitle).toBe("(deleted playlist)");
     } finally {
       ctx.cleanup();
     }
