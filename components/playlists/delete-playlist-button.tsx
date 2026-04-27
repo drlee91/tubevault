@@ -3,7 +3,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { deletePlaylistAction } from "@/lib/actions/playlist-actions";
 
@@ -27,12 +34,18 @@ export function DeletePlaylistButton({ playlistId }: { playlistId: number }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Delete playlist?</DialogTitle></DialogHeader>
-          <p className="text-sm text-[var(--color-muted)]">
+          <DialogDescription>
             This removes the playlist and its item links. Downloaded files and video metadata are kept.
-          </p>
+          </DialogDescription>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={onConfirm} disabled={pending} className="bg-[var(--color-status-removed)]">Delete</Button>
+            <Button variant="ghost" disabled={pending} onClick={() => setOpen(false)}>Cancel</Button>
+            <Button
+              onClick={onConfirm}
+              disabled={pending}
+              className="bg-[var(--color-status-removed)] text-white hover:bg-[var(--color-status-removed)]/90"
+            >
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
