@@ -5,6 +5,8 @@ import {
   UrlNotPlaylistError,
 } from "@/lib/services/playlist-service";
 import {
+  UrlNotVideoError,
+  VideoAlreadyTrackedError,
   VideoNotAvailableError,
   VideoNotFoundError,
 } from "@/lib/services/video-service";
@@ -20,6 +22,10 @@ export function mapServiceError(err: unknown): ActionError {
     return { code: "URL_NOT_PLAYLIST", message: "URL is not a playlist" };
   if (err instanceof ProviderUnsupportedError)
     return { code: "PROVIDER_UNSUPPORTED", message: "Provider not supported" };
+  if (err instanceof UrlNotVideoError)
+    return { code: "URL_NOT_VIDEO", message: "URL is not a video" };
+  if (err instanceof VideoAlreadyTrackedError)
+    return { code: "VIDEO_ALREADY_TRACKED", message: "Video is already tracked" };
   if (err instanceof VideoNotAvailableError)
     return { code: "VIDEO_NOT_AVAILABLE", message: "Video is not available" };
   if (err instanceof VideoNotFoundError)

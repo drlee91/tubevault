@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mapServiceError } from "./map-error";
 import { PlaylistAlreadyTrackedError, ProviderUnsupportedError, UrlNotPlaylistError } from "@/lib/services/playlist-service";
-import { VideoNotAvailableError, VideoNotFoundError } from "@/lib/services/video-service";
+import { UrlNotVideoError, VideoAlreadyTrackedError, VideoNotAvailableError, VideoNotFoundError } from "@/lib/services/video-service";
 import { JobNotFoundError, NotRetryableError } from "@/lib/services/job-service";
 
 describe("mapServiceError", () => {
@@ -14,6 +14,12 @@ describe("mapServiceError", () => {
   });
   it("maps ProviderUnsupportedError", () => {
     expect(mapServiceError(new ProviderUnsupportedError("x")).code).toBe("PROVIDER_UNSUPPORTED");
+  });
+  it("maps UrlNotVideoError", () => {
+    expect(mapServiceError(new UrlNotVideoError("https://example.com")).code).toBe("URL_NOT_VIDEO");
+  });
+  it("maps VideoAlreadyTrackedError", () => {
+    expect(mapServiceError(new VideoAlreadyTrackedError(1)).code).toBe("VIDEO_ALREADY_TRACKED");
   });
   it("maps VideoNotAvailableError", () => {
     expect(mapServiceError(new VideoNotAvailableError(1)).code).toBe("VIDEO_NOT_AVAILABLE");
