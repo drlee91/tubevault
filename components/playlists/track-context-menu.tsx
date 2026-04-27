@@ -27,7 +27,7 @@ export function TrackContextMenu({ videoId, externalUrl, available }: Props) {
     start(async () => {
       const result = await downloadVideoAction(videoId, kind);
       if (result.ok) {
-        toast.success("Download queued");
+        toast.success(`Re-download (${kind}) queued`);
       } else {
         toast.error("Download failed", { description: result.error.message });
       }
@@ -68,10 +68,10 @@ export function TrackContextMenu({ videoId, externalUrl, available }: Props) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={!available} onClick={() => dl("audio")}>
-          <Download className="mr-2 h-4 w-4" /> Re-download Audio
+          <Download className="mr-2 h-4 w-4" /> Re-download as Audio
         </DropdownMenuItem>
         <DropdownMenuItem disabled={!available} onClick={() => dl("video")}>
-          <Download className="mr-2 h-4 w-4" /> Re-download Video
+          <Download className="mr-2 h-4 w-4" /> Re-download as Video
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={refresh}>

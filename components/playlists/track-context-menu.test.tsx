@@ -28,8 +28,8 @@ describe("TrackContextMenu", () => {
     await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
 
     expect(await screen.findByRole("menuitem", { name: /open on youtube/i })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: /re-download audio/i })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: /re-download video/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /re-download as audio/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /re-download as video/i })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: /refresh availability/i })).toBeInTheDocument();
   });
 
@@ -44,8 +44,8 @@ describe("TrackContextMenu", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
 
-    const audioItem = await screen.findByRole("menuitem", { name: /re-download audio/i });
-    const videoItem = screen.getByRole("menuitem", { name: /re-download video/i });
+    const audioItem = await screen.findByRole("menuitem", { name: /re-download as audio/i });
+    const videoItem = screen.getByRole("menuitem", { name: /re-download as video/i });
 
     // base-ui sets data-disabled on disabled items
     expect(audioItem).toHaveAttribute("data-disabled");
