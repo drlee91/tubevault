@@ -15,10 +15,12 @@ export function ItemFilterChips() {
     router.replace(`?${next.toString()}`);
   }
   return (
-    <div className="flex gap-2">
+    <div role="group" aria-label="Filter items" className="flex gap-2">
       {FILTERS.map((f) => (
         <button
           key={f}
+          type="button"
+          aria-pressed={current === f}
           onClick={() => set(f)}
           className={`rounded-md px-3 py-1 text-xs ${
             current === f

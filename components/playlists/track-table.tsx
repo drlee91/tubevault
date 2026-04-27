@@ -23,6 +23,7 @@ export function TrackTable({ items }: { items: PlaylistDetailItem[] }) {
     <div className="space-y-3">
       <div className="flex items-center gap-3">
         <Input
+          aria-label="Search items"
           placeholder="Search items"
           value={q}
           onChange={(e) => setQ(e.target.value)}

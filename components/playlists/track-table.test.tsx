@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
+import type { PlaylistDetailItem } from "@/lib/services/playlist-service";
 
-const mockSearchParams = vi.fn();
 let searchParamsValue = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useSearchParams: () => searchParamsValue,
