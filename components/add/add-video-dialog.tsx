@@ -90,7 +90,7 @@ export function AddVideoDialog({ open, onOpenChange, onSwitchToPlaylist }: Props
                     ? "Already tracked. Open it from the standalone tab."
                     : submitError.message}
                 </p>
-                {submitError.code === "URL_NOT_VIDEO" && (
+                {submitError.code === "URL_NOT_VIDEO" && onSwitchToPlaylist && (
                   <Button
                     type="button"
                     variant="ghost"
