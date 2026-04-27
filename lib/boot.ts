@@ -34,6 +34,7 @@ export interface BootContext {
   downloadService: DownloadService;
   playlistService: PlaylistService;
   videoService: VideoService;
+  mediaFileRepo: MediaFileRepo;
 }
 
 // Cache the boot promise rather than a boolean. A failed migration leaves the
@@ -148,6 +149,7 @@ async function doBoot(): Promise<BootContext> {
     downloadService,
     playlistService,
     videoService,
+    mediaFileRepo: mediaRepo,
   };
 }
 

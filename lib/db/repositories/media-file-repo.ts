@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { mediaFiles } from "@/lib/db/schema";
 import type * as schema from "@/lib/db/schema";
@@ -43,5 +43,21 @@ export class MediaFileRepo {
 
   delete(id: number): void {
     this.db.delete(mediaFiles).where(eq(mediaFiles.id, id)).run();
+  }
+
+  usageByKind(): {
+    audio: { totalBytes: number; fileCount: number };
+    video: { totalBytes: number; fileCount: number };
+  } {
+    const rows = this.db.all<{ kind: "audio" | "video"; total: number; count: number }>(sql`
+      SELECT kind, COALESCE(SUM(file_size_bytes), 0) AS total, COUNT(*) AS count
+      FROM media_files GROUP BY kind
+    `);
+    const out = {
+      audio: { totalBytes: 0, fileCount: 0 },
+      video: { totalBytes: 0, fileCount: 0 },
+    };
+    for (const r of rows) out[r.kind] = { totalBytes: Number(r.total), fileCount: Number(r.count) };
+    return out;
   }
 }
