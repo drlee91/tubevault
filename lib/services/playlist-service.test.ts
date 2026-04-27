@@ -514,3 +514,110 @@ describe("recentActivity", () => {
     }
   });
 });
+
+describe("recentSyncRuns", () => {
+  it("returns empty array when no sync runs", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const runs = ctx.playlistService.recentSyncRuns({ limit: 10 });
+      expect(runs).toEqual([]);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("returns correct shape and respects limit", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const pl = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_HIST",
+        url: "https://www.youtube.com/playlist?list=PL_HIST",
+        defaultFormat: "audio",
+        title: "History Playlist",
+      });
+
+      // Create 4 runs
+      for (let i = 0; i < 4; i++) {
+        const runId = ctx.syncRunRepo.startRun({ playlistId: pl, triggeredBy: "manual" });
+        ctx.syncRunRepo.finishRun(runId, {
+          status: "success",
+          stats: { added: i, removed: 0, unchanged: 0, unavailable: 0, downloaded: 1 },
+          errorLog: [],
+        });
+      }
+
+      const runs = ctx.playlistService.recentSyncRuns({ limit: 3 });
+      expect(runs).toHaveLength(3);
+      // Shape check on first item
+      const first = runs[0]!;
+      expect(first.playlistId).toBe(pl);
+      expect(first.playlistTitle).toBe("History Playlist");
+      expect(first.status).toBe("success");
+      expect(typeof first.startedAt).toBe("string");
+      expect(typeof first.videosAdded).toBe("number");
+      expect(typeof first.videosDownloaded).toBe("number");
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("filters by status (failed only returns failed runs)", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const pl = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_HISTF",
+        url: "https://www.youtube.com/playlist?list=PL_HISTF",
+        defaultFormat: "audio",
+        title: "Filter Playlist",
+      });
+
+      const run1 = ctx.syncRunRepo.startRun({ playlistId: pl, triggeredBy: "manual" });
+      ctx.syncRunRepo.finishRun(run1, {
+        status: "success",
+        stats: { added: 1, removed: 0, unchanged: 0, unavailable: 0 },
+        errorLog: [],
+      });
+      const run2 = ctx.syncRunRepo.startRun({ playlistId: pl, triggeredBy: "manual" });
+      ctx.syncRunRepo.finishRun(run2, {
+        status: "failed",
+        stats: { added: 0, removed: 0, unchanged: 0, unavailable: 0 },
+        errorLog: [{ code: "ERR", message: "boom", timestamp: new Date() }],
+      });
+
+      const failed = ctx.playlistService.recentSyncRuns({ limit: 10, status: "failed" });
+      expect(failed).toHaveLength(1);
+      expect(failed[0]!.status).toBe("failed");
+      expect(failed[0]!.id).toBe(run2);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("excludes orphan sync_runs (playlist_id NULL)", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const pl = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL_ORPH2",
+        url: "https://www.youtube.com/playlist?list=PL_ORPH2",
+        defaultFormat: "audio",
+        title: "Orphan Test Playlist",
+      });
+      const runId = ctx.syncRunRepo.startRun({ playlistId: pl, triggeredBy: "manual" });
+      ctx.syncRunRepo.finishRun(runId, {
+        status: "success",
+        stats: { added: 1, removed: 0, unchanged: 0, unavailable: 0 },
+        errorLog: [],
+      });
+      // Nullify playlist_id to simulate orphan
+      ctx.db.run(sql`UPDATE sync_runs SET playlist_id = NULL WHERE id = ${runId}`);
+
+      const runs = ctx.playlistService.recentSyncRuns({ limit: 10 });
+      expect(runs.find((r) => r.id === runId)).toBeUndefined();
+    } finally {
+      ctx.cleanup();
+    }
+  });
+});

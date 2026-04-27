@@ -62,6 +62,21 @@ export interface RecentActivityItem {
   triggeredBy: string;
 }
 
+export interface SyncRunRow {
+  id: number;
+  playlistId: number;
+  playlistTitle: string;
+  status: "running" | "success" | "partial" | "failed";
+  videosAdded: number;
+  videosRemoved: number;
+  videosUnavailable: number;
+  videosDownloaded: number;
+  startedAt: string;
+  finishedAt: string | null;
+  triggeredBy: string;
+  errorLog: unknown;
+}
+
 export interface DashboardStats {
   playlists: number;
   trackedVideos: number;
@@ -159,6 +174,35 @@ export class PlaylistService {
           : null,
       triggeredBy: r.run.triggeredBy,
     }));
+  }
+
+  recentSyncRuns({ limit, status }: { limit: number; status?: string }): SyncRunRow[] {
+    if (!this.d.syncRunRepo) return [];
+    const rows = this.d.syncRunRepo.recentWithPlaylistFiltered(limit, status);
+    return rows
+      .filter((r) => r.run.playlistId != null)
+      .map((r) => ({
+        id: r.run.id,
+        playlistId: r.run.playlistId!,
+        playlistTitle: r.playlistTitle ?? "(deleted playlist)",
+        status: r.run.status,
+        videosAdded: r.run.videosAdded,
+        videosRemoved: r.run.videosRemoved,
+        videosUnavailable: r.run.videosUnavailable,
+        videosDownloaded: r.run.videosDownloaded,
+        startedAt:
+          r.run.startedAt instanceof Date
+            ? r.run.startedAt.toISOString()
+            : String(r.run.startedAt),
+        finishedAt:
+          r.run.finishedAt != null
+            ? r.run.finishedAt instanceof Date
+              ? r.run.finishedAt.toISOString()
+              : String(r.run.finishedAt)
+            : null,
+        triggeredBy: r.run.triggeredBy,
+        errorLog: r.run.errorLog,
+      }));
   }
 
   getDetailFull(id: number): PlaylistDetailDto | null {
