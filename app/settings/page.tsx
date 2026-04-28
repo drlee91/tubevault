@@ -1,7 +1,32 @@
+import { Suspense } from "react";
+import { ensureBooted } from "@/lib/boot";
 import { SelfCheckBanner } from "@/components/self-check-banner";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { SettingsTabs } from "@/components/settings/settings-tabs";
+import { GeneralSection } from "@/components/settings/general-section";
+import { StorageSection } from "@/components/settings/storage-section";
+import { AudioSection } from "@/components/settings/audio-section";
+import { VideoSection } from "@/components/settings/video-section";
+import { SyncSection } from "@/components/settings/sync-section";
+import { AdvancedSection } from "@/components/settings/advanced-section";
+import { SkeletonRow } from "@/components/shared/skeleton-row";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const ctx = await ensureBooted();
+  const s = ctx.settingsService;
+  const initial = {
+    audioStoragePath: s.getAudioStoragePath(),
+    videoStoragePath: s.getVideoStoragePath(),
+    useSingleStoragePath: s.getUseSingleStoragePath(),
+    defaultAudioFormat: s.getDefaultAudioFormat(),
+    defaultAudioBitrate: s.getDefaultAudioBitrate(),
+    defaultVideoQuality: s.getDefaultVideoQuality(),
+    embedThumbnails: s.getEmbedThumbnails(),
+    globalSyncCron: s.getGlobalSyncCron(),
+    syncOnStartup: s.getSyncOnStartup(),
+    concurrency: s.getConcurrency(),
+    ytdlpPath: s.getYtdlpPath(),
+    ffmpegPath: s.getFfmpegPath(),
+  };
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       <header>
@@ -10,35 +35,17 @@ export default function SettingsPage() {
           Configure storage paths, formats, sync schedule and external tools.
         </p>
       </header>
-
       <SelfCheckBanner />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Storage</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-[var(--color-muted)]">
-          Storage path configuration UI lands in Plan 5.
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Audio &amp; Video Defaults</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-[var(--color-muted)]">
-          Format, bitrate and quality controls land in Plan 5.
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Sync</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-[var(--color-muted)]">
-          Schedule and concurrency controls land in Plan 5.
-        </CardContent>
-      </Card>
+      <Suspense fallback={<SkeletonRow />}>
+        <SettingsTabs
+          general={<GeneralSection />}
+          storage={<StorageSection initial={initial} />}
+          audio={<AudioSection initial={initial} />}
+          video={<VideoSection initial={initial} />}
+          sync={<SyncSection initial={initial} />}
+          advanced={<AdvancedSection initial={initial} />}
+        />
+      </Suspense>
     </div>
   );
 }
