@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { addVideoAction } from "@/lib/actions/video-actions";
+import { useMediaQuery } from "@/lib/client/use-media-query";
 
 const schema = z.object({
   url: z.string().url(),
@@ -26,6 +27,10 @@ interface Props {
 
 export function AddVideoDialog({ open, onOpenChange, onSwitchToPlaylist }: Props) {
   const router = useRouter();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const sheetClass = !isDesktop
+    ? "!top-auto !bottom-0 !left-0 !right-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-b-none !rounded-t-xl data-open:!slide-in-from-bottom data-closed:!slide-out-to-bottom"
+    : "";
   const [submitError, setSubmitError] = useState<{ code: string; message: string } | null>(null);
   const form = useForm<Values>({
     resolver: zodResolver(schema),
@@ -49,7 +54,7 @@ export function AddVideoDialog({ open, onOpenChange, onSwitchToPlaylist }: Props
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className={sheetClass}>
         <DialogHeader>
           <DialogTitle>Add video</DialogTitle>
         </DialogHeader>
