@@ -59,3 +59,5 @@ Thumbs.db
 
 # Test fixtures cache
 tests/fixtures/yt-dlp/.cache/
+
+.superpowers/
