@@ -19,7 +19,10 @@ import { PlaylistService } from "@/lib/services/playlist-service";
 import { VideoService } from "@/lib/services/video-service";
 import { SyncService } from "@/lib/services/sync-service";
 import { DownloadService, type DownloadServiceSettings } from "@/lib/services/download-service";
+import { SyncPlaylistHandler } from "@/lib/jobs/handlers/sync-playlist";
+import { DownloadVideoHandler } from "@/lib/jobs/handlers/download-video";
 import type { MediaProviderAdapter, ProviderId, PlaylistMetadata, VideoMetadata, DownloadOpts, DownloadResult, AvailabilityProbe } from "@/lib/providers/types";
+import type { JobType, JobHandler } from "@/lib/jobs/types";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 
 // ---------------------------------------------------------------------------
@@ -85,6 +88,37 @@ export class FakeYouTubeAdapter implements MediaProviderAdapter {
 }
 
 // ---------------------------------------------------------------------------
+// FakeYouTubeAdapterWithItems — extends FakeYouTubeAdapter to return 2 fake
+// playlist items, used when withHandlers=true for E2E tests.
+// ---------------------------------------------------------------------------
+export class FakeYouTubeAdapterWithItems extends FakeYouTubeAdapter {
+  override async fetchPlaylist(url: string): Promise<PlaylistMetadata> {
+    const base = await super.fetchPlaylist(url);
+    return {
+      ...base,
+      items: [
+        {
+          externalId: "FAKE_VIDEO_1",
+          title: "Fake Video 1",
+          channelTitle: "Fake Channel",
+          durationSeconds: 120,
+          thumbnailUrl: null,
+          inferredStatus: "available",
+        },
+        {
+          externalId: "FAKE_VIDEO_2",
+          title: "Fake Video 2",
+          channelTitle: "Fake Channel",
+          durationSeconds: 180,
+          thumbnailUrl: null,
+          inferredStatus: "available",
+        },
+      ],
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // TestBootContext — mirrors BootContext in lib/boot.ts exactly.
 // ---------------------------------------------------------------------------
 export interface TestBootContext {
@@ -109,7 +143,16 @@ export interface TestBootContext {
   cleanup: () => void;
 }
 
-export async function createTestBootContext(): Promise<TestBootContext> {
+export interface CreateTestBootContextOptions {
+  /** When true, wires SyncPlaylistHandler + DownloadVideoHandler into WorkerPool
+   *  and registers FakeYouTubeAdapterWithItems (returns 2 fake playlist items).
+   *  Defaults to false — existing tests are unaffected. */
+  withHandlers?: boolean;
+}
+
+export async function createTestBootContext(
+  opts: CreateTestBootContextOptions = {},
+): Promise<TestBootContext> {
   const sqlite = new Database(":memory:");
   sqlite.pragma("foreign_keys = ON");
   const db = drizzle(sqlite, { schema });
@@ -137,7 +180,9 @@ export async function createTestBootContext(): Promise<TestBootContext> {
   });
 
   const registry = new ProviderRegistry();
-  registry.register(new FakeYouTubeAdapter());
+  registry.register(
+    opts.withHandlers ? new FakeYouTubeAdapterWithItems() : new FakeYouTubeAdapter(),
+  );
 
   const queue = new JobQueue(db, jobRepo);
   await queue.resetStaleRunning();
@@ -169,10 +214,20 @@ export async function createTestBootContext(): Promise<TestBootContext> {
   const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, mediaFileRepo: mediaRepo, queue, registry });
   const videoService = new VideoService({ videoRepo, queue, registry });
 
-  // Worker pool created but NOT wired to the queue — tests must not process jobs.
-  // Skipping queue.attachWorker() prevents the signal() path from dispatching and
-  // failing enqueued jobs when no handlers are registered.
-  const workerPool = new WorkerPool(queue, new Map(), { maxConcurrency: 1 });
+  // Worker pool: when withHandlers=true, real handlers are wired so the drain
+  // helper can process jobs. Pool is NOT started (no setInterval), so jobs only
+  // run when explicitly drained. When withHandlers=false the pool has no handlers
+  // and is not wired to the queue — existing tests are unaffected.
+  let workerPool: WorkerPool;
+  if (opts.withHandlers) {
+    const handlerMap = new Map<JobType, JobHandler>([
+      ["sync_playlist", new SyncPlaylistHandler(syncService)],
+      ["download_video", new DownloadVideoHandler(downloadService, videoRepo)],
+    ]);
+    workerPool = new WorkerPool(queue, handlerMap, { maxConcurrency: 1 });
+  } else {
+    workerPool = new WorkerPool(queue, new Map(), { maxConcurrency: 1 });
+  }
 
   return {
     dbPath,
