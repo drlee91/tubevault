@@ -3,6 +3,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as videoActions from "@/lib/actions/video-actions";
 import { TrackContextMenu } from "./track-context-menu";
+import { PlayerStoreProvider } from "@/lib/client/use-player-store";
+import { createPlayerStore } from "@/lib/player/store";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -73,4 +75,51 @@ describe("TrackContextMenu", () => {
       expect(spy).toHaveBeenCalledWith(3);
     });
   });
+});
+
+const queueItem = {
+  videoId: 1, defaultKind: "audio" as const, title: "T",
+  channelTitle: null, thumbnailUrl: null, durationSeconds: 60, availableKinds: ["audio" as const],
+};
+
+it("Play Now replaces the queue", async () => {
+  const store = createPlayerStore();
+  store.getState().setQueue([{ ...queueItem, videoId: 99 }], 0);
+  render(
+    <PlayerStoreProvider store={store}>
+      <TrackContextMenu videoId={1} externalUrl="https://x" available queueItem={queueItem} />
+    </PlayerStoreProvider>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
+  await userEvent.click(await screen.findByRole("menuitem", { name: /play now/i }));
+  expect(store.getState().queue.map((q) => q.videoId)).toEqual([1]);
+});
+
+it("Add to Queue appends", async () => {
+  const store = createPlayerStore();
+  store.getState().setQueue([{ ...queueItem, videoId: 99 }], 0);
+  render(
+    <PlayerStoreProvider store={store}>
+      <TrackContextMenu videoId={1} externalUrl="https://x" available queueItem={queueItem} />
+    </PlayerStoreProvider>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
+  await userEvent.click(await screen.findByRole("menuitem", { name: /add to queue/i }));
+  expect(store.getState().queue.map((q) => q.videoId)).toEqual([99, 1]);
+});
+
+it("Play Next inserts after current", async () => {
+  const store = createPlayerStore();
+  store.getState().setQueue([
+    { ...queueItem, videoId: 99 },
+    { ...queueItem, videoId: 100 },
+  ], 0);
+  render(
+    <PlayerStoreProvider store={store}>
+      <TrackContextMenu videoId={1} externalUrl="https://x" available queueItem={queueItem} />
+    </PlayerStoreProvider>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
+  await userEvent.click(await screen.findByRole("menuitem", { name: /play next/i }));
+  expect(store.getState().queue.map((q) => q.videoId)).toEqual([99, 1, 100]);
 });

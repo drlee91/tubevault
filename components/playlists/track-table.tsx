@@ -56,6 +56,7 @@ export function TrackTable({ items, defaultFormat }: Props) {
             onPlay={() => play(i)}
             isCurrent={currentVideoId === it.video.id}
             isPlaying={currentVideoId === it.video.id && isPlaying}
+            defaultFormat={defaultFormat}
           />
         ))}
       </div>

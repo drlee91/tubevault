@@ -7,6 +7,7 @@ import { RelativeTime } from "@/components/shared/relative-time";
 import { TrackContextMenu } from "./track-context-menu";
 import { NowPlayingIndicator } from "@/components/player/now-playing-indicator";
 import type { PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
+import { fromPlaylistDetailItems } from "@/lib/player/queue-from-items";
 
 interface Props {
   item: PlaylistDetailItem;
@@ -14,11 +15,13 @@ interface Props {
   onPlay?: () => void;
   isCurrent?: boolean;
   isPlaying?: boolean;
+  defaultFormat?: "audio" | "video";
 }
 
-export function TrackRow({ item, position, onPlay, isCurrent, isPlaying }: Props) {
+export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, defaultFormat = "audio" }: Props) {
   const youtubeUrl = `https://www.youtube.com/watch?v=${item.video.externalId}`;
   const downloaded = item.audioFile || item.videoFile;
+  const queueItem = fromPlaylistDetailItems([item], defaultFormat)[0];
   return (
     <div className="flex h-12 items-center gap-3 rounded-md px-2 hover:bg-[var(--color-muted-bg)]">
       <button
@@ -60,6 +63,7 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying }: Props
         videoId={item.video.id}
         externalUrl={youtubeUrl}
         available={item.video.availabilityStatus === "available"}
+        queueItem={queueItem}
       />
       {downloaded && <span className="sr-only">downloaded</span>}
     </div>

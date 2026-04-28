@@ -24,3 +24,8 @@ export function usePlayerStoreApi(): PlayerStore {
   if (!store) throw new Error("usePlayerStoreApi must be used inside PlayerStoreProvider");
   return store;
 }
+
+/** Returns null when rendered outside a PlayerStoreProvider. Useful for optional player integration. */
+export function usePlayerStoreApiOptional(): PlayerStore | null {
+  return useContext(Ctx);
+}

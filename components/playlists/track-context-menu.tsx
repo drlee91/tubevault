@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreVertical, ExternalLink, Download, RefreshCw } from "lucide-react";
+import { MoreVertical, ExternalLink, Download, RefreshCw, Play, PlusCircle, ListPlus } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -13,15 +13,19 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { downloadVideoAction, refreshVideoAction } from "@/lib/actions/video-actions";
+import { usePlayerStoreApiOptional } from "@/lib/client/use-player-store";
+import type { QueueItem } from "@/lib/player/types";
 
 interface Props {
   videoId: number;
   externalUrl: string;
   available: boolean;
+  queueItem?: QueueItem;
 }
 
-export function TrackContextMenu({ videoId, externalUrl, available }: Props) {
+export function TrackContextMenu({ videoId, externalUrl, available, queueItem }: Props) {
   const [, start] = useTransition();
+  const store = usePlayerStoreApiOptional();
 
   function dl(kind: "audio" | "video") {
     start(async () => {
@@ -61,6 +65,25 @@ export function TrackContextMenu({ videoId, externalUrl, available }: Props) {
         <MoreVertical className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {queueItem && store && (
+          <>
+            <DropdownMenuItem
+              onClick={() => {
+                store.getState().setQueue([queueItem], 0);
+                store.getState().play();
+              }}
+            >
+              <Play className="mr-2 h-4 w-4" /> Play Now
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => store.getState().addToQueue(queueItem)}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add to Queue
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => store.getState().playNext(queueItem)}>
+              <ListPlus className="mr-2 h-4 w-4" /> Play Next
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           render={<a href={externalUrl} target="_blank" rel="noreferrer" />}
         >
