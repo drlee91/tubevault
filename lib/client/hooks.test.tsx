@@ -3,6 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { SWRConfig } from "swr";
 import type { PropsWithChildren } from "react";
 import { usePlaylistDetail } from "./use-playlist-detail";
+import type { PlaylistDetailDto } from "@/lib/services/playlist-service";
 
 const wrapper = ({ children }: PropsWithChildren) => (
   <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>
@@ -25,7 +26,7 @@ describe("usePlaylistDetail", () => {
   });
 
   it("uses fallbackData immediately", () => {
-    const fallback = { playlist: { id: 99 }, items: [], recentSyncRuns: [] } as any;
+    const fallback = { playlist: { id: 99 }, items: [], recentSyncRuns: [] } as unknown as PlaylistDetailDto;
     const { result } = renderHook(() => usePlaylistDetail(99, { fallbackData: fallback }), { wrapper });
     expect(result.current.data?.playlist.id).toBe(99);
   });

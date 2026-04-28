@@ -104,7 +104,7 @@ export class JobQueue {
     this.worker?.signal();
   }
 
-  byId(id: number): import("./types").JobRow | null {
+  byId(id: number): JobRow | null {
     return this.repo.byId(id);
   }
 }

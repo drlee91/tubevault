@@ -36,7 +36,7 @@ describe("StandaloneList", () => {
       ...baseHook,
       data: undefined,
       isLoading: true,
-    } as any);
+    } as unknown as ReturnType<typeof hookMod.useStandaloneVideos>);
     render(<StandaloneList />);
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.queryByText("No standalone videos")).not.toBeInTheDocument();
@@ -47,7 +47,7 @@ describe("StandaloneList", () => {
       ...baseHook,
       data: undefined,
       error: new Error("net"),
-    } as any);
+    } as unknown as ReturnType<typeof hookMod.useStandaloneVideos>);
     render(<StandaloneList />);
     expect(screen.getByText("Couldn't load standalone videos")).toBeInTheDocument();
   });
@@ -56,7 +56,7 @@ describe("StandaloneList", () => {
     vi.spyOn(hookMod, "useStandaloneVideos").mockReturnValue({
       ...baseHook,
       data: { videos: [] },
-    } as any);
+    } as unknown as ReturnType<typeof hookMod.useStandaloneVideos>);
     render(<StandaloneList />);
     expect(screen.getByText("No standalone videos")).toBeInTheDocument();
     expect(screen.getByText("Add one via the + Add menu.")).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe("StandaloneList", () => {
     vi.spyOn(hookMod, "useStandaloneVideos").mockReturnValue({
       ...baseHook,
       data: { videos: [videoFixture] },
-    } as any);
+    } as unknown as ReturnType<typeof hookMod.useStandaloneVideos>);
     render(<StandaloneList />);
     expect(screen.getByText("My Test Video")).toBeInTheDocument();
     expect(screen.getByText("Test Channel")).toBeInTheDocument();

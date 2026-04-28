@@ -45,7 +45,7 @@ describe("GET /api/videos (standalone)", () => {
   });
 
   it("returns standalone videos only", async () => {
-    const standaloneId = ctx.videoRepo.upsert({
+    const _standaloneId = ctx.videoRepo.upsert({
       provider: "youtube",
       externalId: "yt:standalone-1",
       title: "Standalone Video",

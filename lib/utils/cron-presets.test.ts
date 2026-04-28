@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CRON_PRESETS, presetFromCron, cronFromPreset } from "./cron-presets";
+import { presetFromCron, cronFromPreset } from "./cron-presets";
 
 describe("cron-presets", () => {
   it("round-trips off: cronFromPreset(presetFromCron(null)) === null", () => {

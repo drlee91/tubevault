@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { updateSettingsAction } from "@/lib/actions/settings-actions";
 import { StorageUsageDisplay } from "./storage-usage-display";
 

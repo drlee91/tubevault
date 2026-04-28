@@ -24,7 +24,7 @@ function mockMatchMedia(matches: boolean) {
     onchange: null,
   } as unknown as MediaQueryList & { _listeners: typeof listeners };
 
-  (mql as any)._listeners = listeners;
+  (mql as unknown as { _listeners: typeof listeners })._listeners = listeners;
 
   Object.defineProperty(window, "matchMedia", {
     writable: true,
@@ -47,7 +47,7 @@ describe("useMediaQuery", () => {
     expect(result.current).toBe(false);
 
     act(() => {
-      for (const handler of (mql as any)._listeners) {
+      for (const handler of (mql as unknown as { _listeners: ((e: MediaQueryListEvent) => void)[] })._listeners) {
         handler({ matches: true } as MediaQueryListEvent);
       }
     });

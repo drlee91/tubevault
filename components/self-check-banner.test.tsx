@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { SelfCheckBanner } from "./self-check-banner";
 import type { SelfCheckResult } from "@/lib/services/self-check-service";
 

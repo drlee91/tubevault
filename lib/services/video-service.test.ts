@@ -5,7 +5,7 @@ import { JobRepo } from "@/lib/db/repositories/job-repo";
 import { JobQueue } from "@/lib/jobs/queue";
 import { ProviderRegistry } from "@/lib/providers/registry";
 import { FakeAdapter } from "@/lib/providers/__tests__/fake-adapter";
-import { VideoService, VideoAlreadyTrackedError, UrlNotVideoError, VideoNotFoundError, VideoNotAvailableError } from "./video-service";
+import { VideoService, VideoAlreadyTrackedError, UrlNotVideoError, VideoNotFoundError } from "./video-service";
 import { createTestBootContext } from "@/lib/test-utils/boot-test-context";
 
 function setup() {

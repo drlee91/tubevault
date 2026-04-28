@@ -10,7 +10,7 @@ describe("TopbarJobBadge", () => {
     vi.spyOn(hookMod, "useJobSummary").mockReturnValue({
       data: { queued: 0, running: 0, failed: 0, completed24h: 0 },
       error: undefined, isLoading: false, isValidating: false, mutate: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof hookMod.useJobSummary>);
     const { container } = render(<TopbarJobBadge />);
     expect(container).toBeEmptyDOMElement();
   });
@@ -19,7 +19,7 @@ describe("TopbarJobBadge", () => {
     vi.spyOn(hookMod, "useJobSummary").mockReturnValue({
       data: { queued: 1, running: 2, failed: 0, completed24h: 0 },
       error: undefined, isLoading: false, isValidating: false, mutate: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof hookMod.useJobSummary>);
     render(<TopbarJobBadge />);
     expect(screen.getByText("3 active")).toBeInTheDocument();
   });
@@ -28,7 +28,7 @@ describe("TopbarJobBadge", () => {
     vi.spyOn(hookMod, "useJobSummary").mockReturnValue({
       data: { queued: 0, running: 0, failed: 2, completed24h: 0 },
       error: undefined, isLoading: false, isValidating: false, mutate: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof hookMod.useJobSummary>);
     render(<TopbarJobBadge />);
     expect(screen.getByText(/2 failed/)).toBeInTheDocument();
   });
