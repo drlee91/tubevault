@@ -151,3 +151,75 @@ describe("PlayerStore — cycleRepeat + cycleMode", () => {
     expect(store.getState().mode).toBe("mini");
   });
 });
+
+describe("PlayerStore — queue mutations", () => {
+  it("addToQueue appends", () => {
+    store.getState().setQueue([item({ videoId: 1 })], 0);
+    store.getState().addToQueue(item({ videoId: 2 }));
+    expect(store.getState().queue.map((q) => q.videoId)).toEqual([1, 2]);
+  });
+
+  it("playNext inserts after current", () => {
+    store.getState().setQueue([item({ videoId: 1 }), item({ videoId: 3 })], 0);
+    store.getState().playNext(item({ videoId: 2 }));
+    expect(store.getState().queue.map((q) => q.videoId)).toEqual([1, 2, 3]);
+  });
+
+  it("removeFromQueue before current shifts index down", () => {
+    store.getState().setQueue([item({ videoId: 1 }), item({ videoId: 2 }), item({ videoId: 3 })], 2);
+    store.getState().removeFromQueue(0);
+    expect(store.getState().currentIndex).toBe(1);
+    expect(store.getState().queue.map((q) => q.videoId)).toEqual([2, 3]);
+  });
+
+  it("removeFromQueue at current keeps index pointing to next item", () => {
+    store.getState().setQueue([item({ videoId: 1 }), item({ videoId: 2 }), item({ videoId: 3 })], 1);
+    store.getState().removeFromQueue(1);
+    expect(store.getState().currentIndex).toBe(1);
+    expect(store.getState().queue.map((q) => q.videoId)).toEqual([1, 3]);
+  });
+
+  it("reorder updates currentIndex when current item moves", () => {
+    store.getState().setQueue([item({ videoId: 1 }), item({ videoId: 2 }), item({ videoId: 3 })], 0);
+    store.getState().reorder(0, 2);
+    expect(store.getState().currentIndex).toBe(2);
+  });
+
+  it("clearQueue resets state", () => {
+    store.getState().setQueue([item({ videoId: 1 })], 0);
+    store.getState().play();
+    store.getState().clearQueue();
+    expect(store.getState().queue).toEqual([]);
+    expect(store.getState().currentIndex).toBe(-1);
+    expect(store.getState().isPlaying).toBe(false);
+  });
+});
+
+describe("PlayerStore — shuffle", () => {
+  it("toggleShuffle on stores original queue and keeps current at index 0", () => {
+    const items = Array.from({ length: 5 }, (_, i) => item({ videoId: i + 1 }));
+    store.getState().setQueue(items, 2);
+    store.getState().toggleShuffle();
+    expect(store.getState().shuffle).toBe(true);
+    expect(store.getState().queue[0]!.videoId).toBe(3);
+    expect(store.getState().currentIndex).toBe(0);
+  });
+
+  it("toggleShuffle off restores original and points index back at current item", () => {
+    const items = Array.from({ length: 5 }, (_, i) => item({ videoId: i + 1 }));
+    store.getState().setQueue(items, 2);
+    store.getState().toggleShuffle();
+    store.getState().toggleShuffle();
+    expect(store.getState().shuffle).toBe(false);
+    expect(store.getState().queue.map((q) => q.videoId)).toEqual([1, 2, 3, 4, 5]);
+    expect(store.getState().currentIndex).toBe(2);
+  });
+});
+
+describe("PlayerStore — broken track skip path", () => {
+  it("markBrokenAndAdvance moves to next track", () => {
+    store.getState().setQueue([item({ videoId: 1 }), item({ videoId: 2 })], 0);
+    store.getState().markBrokenAndAdvance();
+    expect(store.getState().currentIndex).toBe(1);
+  });
+});
