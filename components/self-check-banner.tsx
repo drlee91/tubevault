@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { SelfCheckResult } from "@/lib/services/self-check-service";
+
+function tabFor(name: string): "storage" | "advanced" | null {
+  if (name === "yt-dlp" || name === "ffmpeg") return "advanced";
+  if (name === "audio_storage" || name === "video_storage") return "storage";
+  return null;
+}
 
 export function SelfCheckBanner() {
   const [data, setData] = useState<SelfCheckResult | null>(null);
@@ -60,7 +67,17 @@ export function SelfCheckBanner() {
               <dd>
                 <Badge tone={c.status}>{c.status}</Badge>
               </dd>
-              <dd className="truncate text-xs text-[var(--color-muted)]">{c.detail}</dd>
+              <dd className="flex items-center justify-between gap-3">
+                <span className="truncate text-xs text-[var(--color-muted)]">{c.detail}</span>
+                {c.status !== "ok" && tabFor(c.name) && (
+                  <Link
+                    href={`/settings?tab=${tabFor(c.name)}`}
+                    className="shrink-0 text-xs underline-offset-2 hover:underline text-[var(--color-muted)]"
+                  >
+                    Configure
+                  </Link>
+                )}
+              </dd>
             </div>
           ))}
         </dl>

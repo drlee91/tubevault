@@ -1,6 +1,6 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, notExists, sql } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { videos } from "@/lib/db/schema";
+import { videos, playlistItems } from "@/lib/db/schema";
 import type * as schema from "@/lib/db/schema";
 import type { AvailabilityStatus, ProviderId } from "@/lib/providers/types";
 
@@ -81,6 +81,22 @@ export class VideoRepo {
         .where(and(eq(videos.provider, provider), eq(videos.externalId, externalId)))
         .get() ?? null
     );
+  }
+
+  listStandalone(): VideoRow[] {
+    return this.db
+      .select()
+      .from(videos)
+      .where(
+        notExists(
+          this.db
+            .select({ one: sql`1` })
+            .from(playlistItems)
+            .where(and(eq(playlistItems.videoId, videos.id), eq(playlistItems.inPlaylist, true))),
+        ),
+      )
+      .orderBy(sql`${videos.createdAt} DESC`)
+      .all();
   }
 
   setAvailability(id: number, status: AvailabilityStatus, reason: string | null): void {

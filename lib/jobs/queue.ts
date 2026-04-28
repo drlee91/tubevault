@@ -55,7 +55,12 @@ export class JobQueue {
       RETURNING *
     `;
     const result = this.db.all<JobRow>(claimSql);
-    return result[0] ?? null;
+    const row = result[0] ?? null;
+    // drizzle's JSON mode is not applied to raw SQL results — parse manually.
+    if (row && typeof row.payload === "string") {
+      return { ...row, payload: JSON.parse(row.payload as unknown as string) };
+    }
+    return row;
   }
 
   async complete(id: number): Promise<void> {
@@ -93,5 +98,13 @@ export class JobQueue {
       .where(eq(jobs.status, "running"))
       .run();
     return result.changes;
+  }
+
+  signal(): void {
+    this.worker?.signal();
+  }
+
+  byId(id: number): JobRow | null {
+    return this.repo.byId(id);
   }
 }

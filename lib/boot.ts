@@ -28,11 +28,13 @@ export interface BootContext {
   selfCheckService: SelfCheckService;
   registry: ProviderRegistry;
   queue: JobQueue;
+  jobRepo: JobRepo;
   workerPool: WorkerPool;
   syncService: SyncService;
   downloadService: DownloadService;
   playlistService: PlaylistService;
   videoService: VideoService;
+  mediaFileRepo: MediaFileRepo;
 }
 
 // Cache the boot promise rather than a boolean. A failed migration leaves the
@@ -121,7 +123,7 @@ async function doBoot(): Promise<BootContext> {
     }),
   });
 
-  const playlistService = new PlaylistService({ playlistRepo, itemRepo, queue, registry });
+  const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, mediaFileRepo: mediaRepo, queue, registry });
   const videoService = new VideoService({ videoRepo, queue, registry });
 
   const handlers = new Map<JobType, JobHandler>([
@@ -141,11 +143,13 @@ async function doBoot(): Promise<BootContext> {
     selfCheckService,
     registry,
     queue,
+    jobRepo,
     workerPool,
     syncService,
     downloadService,
     playlistService,
     videoService,
+    mediaFileRepo: mediaRepo,
   };
 }
 

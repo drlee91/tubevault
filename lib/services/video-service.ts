@@ -15,6 +15,18 @@ export class VideoAlreadyTrackedError extends Error {
     this.name = "VideoAlreadyTrackedError";
   }
 }
+export class VideoNotFoundError extends Error {
+  constructor(public readonly videoId: number) {
+    super(`video not found: ${videoId}`);
+    this.name = "VideoNotFoundError";
+  }
+}
+export class VideoNotAvailableError extends Error {
+  constructor(public readonly videoId: number) {
+    super(`video not available: ${videoId}`);
+    this.name = "VideoNotAvailableError";
+  }
+}
 
 export interface AddStandaloneInput {
   url: string;
@@ -60,5 +72,24 @@ export class VideoService {
 
   byId(id: number): VideoRow | null {
     return this.d.videoRepo.byId(id);
+  }
+
+  listStandalone(): VideoRow[] {
+    return this.d.videoRepo.listStandalone();
+  }
+
+  async forceDownload(videoId: number, kind: "audio" | "video"): Promise<{ jobId: number }> {
+    const video = this.d.videoRepo.byId(videoId);
+    if (!video) throw new VideoNotFoundError(videoId);
+    if (video.availabilityStatus !== "available") throw new VideoNotAvailableError(videoId);
+    const jobId = await this.d.queue.enqueue("download_video", { videoId, kind }, { priority: 15 });
+    return { jobId };
+  }
+
+  async enqueueRefresh(videoId: number): Promise<{ jobId: number }> {
+    const video = this.d.videoRepo.byId(videoId);
+    if (!video) throw new VideoNotFoundError(videoId);
+    const jobId = await this.d.queue.enqueue("check_availability", { videoId }, { priority: 10 });
+    return { jobId };
   }
 }

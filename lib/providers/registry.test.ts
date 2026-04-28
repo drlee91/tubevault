@@ -33,4 +33,19 @@ describe("ProviderRegistry", () => {
     r.register(fake("youtube", "a"));
     expect(() => r.register(fake("youtube", "b"))).toThrow(/already registered/);
   });
+  it("unregister removes the adapter and reports it", () => {
+    const r = new ProviderRegistry();
+    r.register(fake("youtube", "youtube.com"));
+    expect(r.unregister("youtube")).toBe(true);
+    expect(r.findById("youtube")).toBeNull();
+    expect(r.unregister("youtube")).toBe(false);
+  });
+  it("re-register works after unregister", () => {
+    const r = new ProviderRegistry();
+    r.register(fake("youtube", "a"));
+    r.unregister("youtube");
+    const replacement = fake("youtube", "b");
+    r.register(replacement);
+    expect(r.findById("youtube")).toBe(replacement);
+  });
 });

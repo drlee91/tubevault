@@ -5,7 +5,8 @@ import { JobRepo } from "@/lib/db/repositories/job-repo";
 import { JobQueue } from "@/lib/jobs/queue";
 import { ProviderRegistry } from "@/lib/providers/registry";
 import { FakeAdapter } from "@/lib/providers/__tests__/fake-adapter";
-import { VideoService, VideoAlreadyTrackedError, UrlNotVideoError } from "./video-service";
+import { VideoService, VideoAlreadyTrackedError, UrlNotVideoError, VideoNotFoundError } from "./video-service";
+import { createTestBootContext } from "@/lib/test-utils/boot-test-context";
 
 function setup() {
   const { db, sqlite } = createTestDb();
@@ -76,6 +77,122 @@ describe("VideoService", () => {
         .rejects.toBeInstanceOf(VideoAlreadyTrackedError);
     } finally {
       ctx.sqlite.close();
+    }
+  });
+});
+
+describe("listStandalone", () => {
+  it("returns videos with no active playlist_items", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      // Seed a standalone video (no playlist_items row)
+      const standaloneId = ctx.videoRepo.upsert({
+        provider: "youtube",
+        externalId: "yt:standalone-1",
+        title: "Standalone Video",
+        channelTitle: null,
+        durationSeconds: null,
+        thumbnailUrl: null,
+        availabilityStatus: "available",
+      });
+
+      // Seed a video that is in an active playlist_item
+      const inPlaylistVideoId = ctx.videoRepo.upsert({
+        provider: "youtube",
+        externalId: "yt:in-playlist",
+        title: "In-Playlist Video",
+        channelTitle: null,
+        durationSeconds: null,
+        thumbnailUrl: null,
+        availabilityStatus: "available",
+      });
+      const playlistId = ctx.playlistRepo.create({
+        provider: "youtube",
+        externalId: "pl:test",
+        url: "https://youtube.com/playlist?list=pl:test",
+        defaultFormat: "audio",
+        title: "Test Playlist",
+        channelTitle: null,
+      });
+      ctx.itemRepo.upsertActive(playlistId, inPlaylistVideoId, 0);
+
+      const standalone = ctx.videoService.listStandalone();
+      expect(standalone.map((v) => v.externalId)).toContain("yt:standalone-1");
+      expect(standalone.map((v) => v.externalId)).not.toContain("yt:in-playlist");
+      void standaloneId;
+    } finally {
+      ctx.cleanup();
+    }
+  });
+});
+
+describe("forceDownload", () => {
+  it("rejects when video not available", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const id = ctx.videoRepo.upsert({
+        provider: "youtube",
+        externalId: "yt:private-1",
+        title: "Private Video",
+        channelTitle: null,
+        durationSeconds: null,
+        thumbnailUrl: null,
+        availabilityStatus: "private",
+      });
+      await expect(ctx.videoService.forceDownload(id, "audio")).rejects.toThrow(/not available/i);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("throws VideoNotFoundError on missing id", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      await expect(ctx.videoService.forceDownload(99999, "audio")).rejects.toBeInstanceOf(VideoNotFoundError);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  it("enqueues download_video job with priority 15", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const id = ctx.videoRepo.upsert({
+        provider: "youtube",
+        externalId: "yt:available-1",
+        title: "Available Video",
+        channelTitle: null,
+        durationSeconds: null,
+        thumbnailUrl: null,
+        availabilityStatus: "available",
+      });
+      const { jobId } = await ctx.videoService.forceDownload(id, "audio");
+      const job = ctx.jobRepo.byId(jobId);
+      expect(job?.priority).toBe(15);
+      expect(job?.type).toBe("download_video");
+    } finally {
+      ctx.cleanup();
+    }
+  });
+});
+
+describe("enqueueRefresh", () => {
+  it("enqueues check_availability job", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const id = ctx.videoRepo.upsert({
+        provider: "youtube",
+        externalId: "yt:any-1",
+        title: "Any Video",
+        channelTitle: null,
+        durationSeconds: null,
+        thumbnailUrl: null,
+        availabilityStatus: "available",
+      });
+      const { jobId } = await ctx.videoService.enqueueRefresh(id);
+      expect(ctx.jobRepo.byId(jobId)?.type).toBe("check_availability");
+    } finally {
+      ctx.cleanup();
     }
   });
 });

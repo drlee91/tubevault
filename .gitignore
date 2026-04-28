@@ -54,8 +54,8 @@ Thumbs.db
 .worktrees/
 
 # Storage (user data — should never be committed)
-storage/
-downloads/
+/storage/
+/downloads/
 
 # Test fixtures cache
 tests/fixtures/yt-dlp/.cache/

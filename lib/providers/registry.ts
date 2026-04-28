@@ -10,6 +10,10 @@ export class ProviderRegistry {
     this.adapters.set(adapter.provider, adapter);
   }
 
+  unregister(id: ProviderId): boolean {
+    return this.adapters.delete(id);
+  }
+
   findById(id: ProviderId): MediaProviderAdapter | null {
     return this.adapters.get(id) ?? null;
   }

@@ -154,4 +154,118 @@ describe("SelfCheckService", () => {
     const result = await svc.runAll();
     expect(result.overall).toBe("ok");
   });
+
+  describe("checkYtdlp", () => {
+    it("returns ok with version when runner succeeds", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+        runner: makeFakeRunner({
+          "yt-dlp --version": { ok: true, output: "2026.04.01" },
+        }),
+      });
+      const result = await svc.checkYtdlp();
+      expect(result).toEqual({ ok: true, version: "2026.04.01" });
+    });
+
+    it("returns error when runner fails", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+        runner: makeFakeRunner({}),
+      });
+      const result = await svc.checkYtdlp();
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBeTruthy();
+    });
+
+    it("uses custom path when provided", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+        runner: makeFakeRunner({
+          "/custom/yt-dlp --version": { ok: true, output: "custom-version" },
+        }),
+      });
+      const result = await svc.checkYtdlp("/custom/yt-dlp");
+      expect(result).toEqual({ ok: true, version: "custom-version" });
+    });
+  });
+
+  describe("checkFfmpeg", () => {
+    it("returns ok with version when runner succeeds", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+        runner: makeFakeRunner({
+          "ffmpeg -version": { ok: true, output: "ffmpeg version 7.0 built with..." },
+        }),
+      });
+      const result = await svc.checkFfmpeg();
+      expect(result).toEqual({ ok: true, version: "ffmpeg version 7.0 built with..." });
+    });
+
+    it("returns error when runner fails", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+        runner: makeFakeRunner({}),
+      });
+      const result = await svc.checkFfmpeg();
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBeTruthy();
+    });
+  });
+
+  describe("checkPathWritable", () => {
+    it("returns true for an existing writable directory", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+      });
+      expect(await svc.checkPathWritable(tempDir)).toBe(true);
+    });
+
+    it("returns false for a non-existent path", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+      });
+      expect(await svc.checkPathWritable(UNWRITABLE_PATH)).toBe(false);
+    });
+
+    it("returns false for a file (not a directory)", async () => {
+      const filePath = path.join(tempDir, "regular-file.txt");
+      writeFileSync(filePath, "hello");
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+      });
+      expect(await svc.checkPathWritable(filePath)).toBe(false);
+    });
+  });
 });

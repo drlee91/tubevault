@@ -1,6 +1,6 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, isNotNull } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { syncRuns } from "@/lib/db/schema";
+import { syncRuns, playlists } from "@/lib/db/schema";
 import type * as schema from "@/lib/db/schema";
 
 export type SyncRunRow = typeof syncRuns.$inferSelect;
@@ -81,5 +81,51 @@ export class SyncRunRepo {
       .orderBy(desc(syncRuns.startedAt))
       .limit(limit)
       .all();
+  }
+
+  recentWithPlaylist(limit: number): Array<{
+    run: SyncRunRow;
+    playlistTitle: string | null;
+  }> {
+    const rows = this.db
+      .select({
+        run: syncRuns,
+        playlistTitle: playlists.title,
+      })
+      .from(syncRuns)
+      .leftJoin(playlists, eq(syncRuns.playlistId, playlists.id))
+      .orderBy(desc(syncRuns.startedAt))
+      .limit(limit)
+      .all();
+    return rows.map((r) => ({
+      run: r.run,
+      playlistTitle: r.playlistTitle ?? null,
+    }));
+  }
+
+  /** Returns recent sync runs that have a non-null playlistId, optionally filtered by status. */
+  recentWithPlaylistFiltered(limit: number, status?: string): Array<{
+    run: SyncRunRow;
+    playlistTitle: string | null;
+  }> {
+    const conditions = status
+      ? and(isNotNull(syncRuns.playlistId), eq(syncRuns.status, status as SyncRunRow["status"]))
+      : isNotNull(syncRuns.playlistId);
+
+    const rows = this.db
+      .select({
+        run: syncRuns,
+        playlistTitle: playlists.title,
+      })
+      .from(syncRuns)
+      .leftJoin(playlists, eq(syncRuns.playlistId, playlists.id))
+      .where(conditions)
+      .orderBy(desc(syncRuns.startedAt))
+      .limit(limit)
+      .all();
+    return rows.map((r) => ({
+      run: r.run,
+      playlistTitle: r.playlistTitle ?? null,
+    }));
   }
 }

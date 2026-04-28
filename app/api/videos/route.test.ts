@@ -3,7 +3,9 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { ensureBooted, resetBootForTests } from "@/lib/boot";
-import { POST } from "./route";
+import { GET, POST } from "./route";
+import { createTestBootContext, type TestBootContext } from "@/lib/test-utils/boot-test-context";
+import { __setBootContextForTesting } from "@/lib/test-utils/server-action-overrides";
 
 beforeEach(async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "tubevault-vid-"));
@@ -29,5 +31,51 @@ describe("POST /api/videos", () => {
       body: JSON.stringify({ url: "https://www.youtube.com/playlist?list=PL" }),
     }));
     expect(res.status).toBe(400);
+  });
+});
+
+describe("GET /api/videos (standalone)", () => {
+  let ctx: TestBootContext;
+  beforeEach(async () => { ctx = await createTestBootContext(); __setBootContextForTesting(ctx); });
+  afterEach(() => { __setBootContextForTesting(null); ctx.cleanup(); });
+
+  it("returns empty list", async () => {
+    const res = await GET(new Request("http://x/api/videos"));
+    expect((await res.json()).videos).toEqual([]);
+  });
+
+  it("returns standalone videos only", async () => {
+    const _standaloneId = ctx.videoRepo.upsert({
+      provider: "youtube",
+      externalId: "yt:standalone-1",
+      title: "Standalone Video",
+      channelTitle: "Test Channel",
+      durationSeconds: 120,
+      thumbnailUrl: null,
+      availabilityStatus: "available",
+    });
+
+    const playlistId = ctx.playlistRepo.create({
+      provider: "youtube",
+      externalId: "PL-test-1",
+      url: "https://www.youtube.com/playlist?list=PL-test-1",
+      defaultFormat: "audio",
+      title: "Test Playlist",
+    });
+    const inPlaylistVideoId = ctx.videoRepo.upsert({
+      provider: "youtube",
+      externalId: "yt:in-playlist",
+      title: "In Playlist Video",
+      channelTitle: "Test Channel",
+      durationSeconds: 60,
+      thumbnailUrl: null,
+      availabilityStatus: "available",
+    });
+    ctx.itemRepo.upsertActive(playlistId, inPlaylistVideoId, 0);
+
+    const res = await GET(new Request("http://x/api/videos"));
+    const body = await res.json();
+    expect(body.videos.map((v: { externalId: string }) => v.externalId)).toContain("yt:standalone-1");
+    expect(body.videos.map((v: { externalId: string }) => v.externalId)).not.toContain("yt:in-playlist");
   });
 });
