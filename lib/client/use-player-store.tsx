@@ -1,0 +1,26 @@
+"use client";
+import { createContext, useContext, useRef, useSyncExternalStore } from "react";
+import type { PlayerStore } from "@/lib/player/store";
+
+const Ctx = createContext<PlayerStore | null>(null);
+
+export function PlayerStoreProvider({ store, children }: { store: PlayerStore; children: React.ReactNode }) {
+  const ref = useRef(store);
+  return <Ctx.Provider value={ref.current}>{children}</Ctx.Provider>;
+}
+
+export function usePlayerStore<T>(selector: (s: ReturnType<PlayerStore["getState"]>) => T): T {
+  const store = useContext(Ctx);
+  if (!store) throw new Error("usePlayerStore must be used inside PlayerStoreProvider");
+  return useSyncExternalStore(
+    (cb) => store.subscribe(cb),
+    () => selector(store.getState()),
+    () => selector(store.getState()),
+  );
+}
+
+export function usePlayerStoreApi(): PlayerStore {
+  const store = useContext(Ctx);
+  if (!store) throw new Error("usePlayerStoreApi must be used inside PlayerStoreProvider");
+  return store;
+}
