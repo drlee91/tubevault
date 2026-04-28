@@ -1,4 +1,4 @@
-import type { VideoRepo, VideoRow } from "@/lib/db/repositories/video-repo";
+import type { VideoRepo, VideoRow, VideoWithKinds } from "@/lib/db/repositories/video-repo";
 import type { JobQueue } from "@/lib/jobs/queue";
 import type { ProviderRegistry } from "@/lib/providers/registry";
 import { ProviderUnsupportedError } from "./playlist-service";
@@ -76,6 +76,10 @@ export class VideoService {
 
   listStandalone(): VideoRow[] {
     return this.d.videoRepo.listStandalone();
+  }
+
+  listStandaloneWithKinds(): VideoWithKinds[] {
+    return this.d.videoRepo.listStandaloneWithKinds();
   }
 
   async forceDownload(videoId: number, kind: "audio" | "video"): Promise<{ jobId: number }> {
