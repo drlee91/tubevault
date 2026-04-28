@@ -12,6 +12,7 @@ export type VideoSerialized = Omit<
   lastSeenAt: string;
   createdAt: string;
   updatedAt: string;
+  availableKinds: Array<"audio" | "video">;
 };
 
 export function useStandaloneVideos(opts: { intervalMs?: number } = {}) {

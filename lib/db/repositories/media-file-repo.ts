@@ -37,6 +37,10 @@ export class MediaFileRepo {
     );
   }
 
+  byId(id: number): MediaFileRow | null {
+    return this.db.select().from(mediaFiles).where(eq(mediaFiles.id, id)).get() ?? null;
+  }
+
   byVideoId(videoId: number): MediaFileRow[] {
     return this.db.select().from(mediaFiles).where(eq(mediaFiles.videoId, videoId)).all();
   }

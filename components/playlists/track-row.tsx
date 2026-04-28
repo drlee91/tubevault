@@ -5,16 +5,33 @@ import { StatusPill, type AvailabilityStatus } from "@/components/shared/status-
 import { Duration } from "@/components/shared/duration";
 import { RelativeTime } from "@/components/shared/relative-time";
 import { TrackContextMenu } from "./track-context-menu";
+import { NowPlayingIndicator } from "@/components/player/now-playing-indicator";
 import type { PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
+import { fromPlaylistDetailItems } from "@/lib/player/queue-from-items";
 
-export function TrackRow({ item, position }: { item: PlaylistDetailItem; position: number }) {
+interface Props {
+  item: PlaylistDetailItem;
+  position: number;
+  onPlay?: () => void;
+  isCurrent?: boolean;
+  isPlaying?: boolean;
+  defaultFormat?: "audio" | "video";
+}
+
+export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, defaultFormat = "audio" }: Props) {
   const youtubeUrl = `https://www.youtube.com/watch?v=${item.video.externalId}`;
   const downloaded = item.audioFile || item.videoFile;
+  const queueItem = fromPlaylistDetailItems([item], defaultFormat)[0];
   return (
     <div className="flex h-12 items-center gap-3 rounded-md px-2 hover:bg-[var(--color-muted-bg)]">
-      <span className="w-8 shrink-0 text-right text-xs text-[var(--color-muted)] tabular-nums">
-        {position + 1}
-      </span>
+      <button
+        type="button"
+        aria-label={`Play ${item.video.title}`}
+        onClick={onPlay}
+        className="flex w-8 shrink-0 items-center justify-end text-xs text-[var(--color-muted)] tabular-nums"
+      >
+        {isCurrent ? <NowPlayingIndicator isPlaying={!!isPlaying} /> : position + 1}
+      </button>
       {item.video.thumbnailUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -46,6 +63,7 @@ export function TrackRow({ item, position }: { item: PlaylistDetailItem; positio
         videoId={item.video.id}
         externalUrl={youtubeUrl}
         available={item.video.availabilityStatus === "available"}
+        queueItem={queueItem}
       />
       {downloaded && <span className="sr-only">downloaded</span>}
     </div>

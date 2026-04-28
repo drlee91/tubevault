@@ -2,17 +2,42 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { PlaylistDetailItem } from "@/lib/services/playlist-service";
+import { createPlayerStore } from "@/lib/player/store";
 
 let searchParamsValue = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useSearchParams: () => searchParamsValue,
 }));
 
-// Mock TrackRow to keep tests focused on filtering logic
+// Mock TrackRow to keep tests focused on filtering logic,
+// but forward onPlay so click tests work.
 vi.mock("./track-row", () => ({
-  TrackRow: ({ item }: { item: PlaylistDetailItem; position: number }) => (
-    <div data-testid="track-row">{item.video.title}</div>
+  TrackRow: ({
+    item,
+    onPlay,
+  }: {
+    item: PlaylistDetailItem;
+    position: number;
+    onPlay?: () => void;
+    isCurrent?: boolean;
+    isPlaying?: boolean;
+  }) => (
+    <div data-testid="track-row">
+      <button onClick={onPlay} aria-label={`play ${item.video.title}`}>
+        {item.video.title}
+      </button>
+    </div>
   ),
+}));
+
+// Module-level store reference; replaced per-test in the click integration test.
+let _mockStore = createPlayerStore();
+
+vi.mock("@/lib/client/use-player-store", () => ({
+  usePlayerStore: (selector: (s: ReturnType<typeof _mockStore["getState"]>) => unknown) =>
+    selector(_mockStore.getState()),
+  usePlayerStoreApi: () => _mockStore,
+  PlayerStoreProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 import { TrackTable } from "./track-table";
@@ -22,6 +47,7 @@ function makeItem(
   title: string,
   availabilityStatus: string,
   inPlaylist = true,
+  availableKinds: ("audio" | "video")[] = [],
 ): PlaylistDetailItem {
   return {
     position: id,
@@ -41,6 +67,7 @@ function makeItem(
     audioFile: null,
     videoFile: null,
     pendingJob: null,
+    availableKinds,
   };
 }
 
@@ -54,10 +81,11 @@ const ITEMS: PlaylistDetailItem[] = [
 describe("TrackTable", () => {
   beforeEach(() => {
     searchParamsValue = new URLSearchParams();
+    _mockStore = createPlayerStore();
   });
 
   it("renders all in-playlist items by default (filter=all)", () => {
-    render(<TrackTable items={ITEMS} />);
+    render(<TrackTable items={ITEMS} defaultFormat="audio" />);
     const rows = screen.getAllByTestId("track-row");
     // 3 in-playlist items (Delta is excluded because inPlaylist=false)
     expect(rows).toHaveLength(3);
@@ -69,7 +97,7 @@ describe("TrackTable", () => {
 
   it("filter=available hides unavailable/removed items", () => {
     searchParamsValue = new URLSearchParams("filter=available");
-    render(<TrackTable items={ITEMS} />);
+    render(<TrackTable items={ITEMS} defaultFormat="audio" />);
     const rows = screen.getAllByTestId("track-row");
     expect(rows).toHaveLength(1);
     expect(screen.getByText("Alpha Video")).toBeInTheDocument();
@@ -79,7 +107,7 @@ describe("TrackTable", () => {
 
   it("filter=unavailable hides available items", () => {
     searchParamsValue = new URLSearchParams("filter=unavailable");
-    render(<TrackTable items={ITEMS} />);
+    render(<TrackTable items={ITEMS} defaultFormat="audio" />);
     const rows = screen.getAllByTestId("track-row");
     // Beta (unavailable) + Gamma (removed) should show
     expect(rows).toHaveLength(2);
@@ -90,7 +118,7 @@ describe("TrackTable", () => {
 
   it("search query filters by title", async () => {
     const user = userEvent.setup();
-    render(<TrackTable items={ITEMS} />);
+    render(<TrackTable items={ITEMS} defaultFormat="audio" />);
     const input = screen.getByPlaceholderText("Search items");
     await user.type(input, "alpha");
     expect(screen.getByText("Alpha Video")).toBeInTheDocument();
@@ -100,10 +128,28 @@ describe("TrackTable", () => {
 
   it('shows "No items match." when nothing matches', async () => {
     const user = userEvent.setup();
-    render(<TrackTable items={ITEMS} />);
+    render(<TrackTable items={ITEMS} defaultFormat="audio" />);
     const input = screen.getByPlaceholderText("Search items");
     await user.type(input, "xyz");
     expect(screen.getByText("No items match.")).toBeInTheDocument();
     expect(screen.queryByTestId("track-row")).not.toBeInTheDocument();
+  });
+
+  it("clicking a row sets the player queue + plays", async () => {
+    const store = createPlayerStore();
+    _mockStore = store;
+
+    const items: PlaylistDetailItem[] = [
+      makeItem(1, "First Video", "available", true, ["audio"]),
+      makeItem(2, "Second Video", "available", true, ["audio"]),
+    ];
+
+    render(<TrackTable items={items} defaultFormat="audio" />);
+
+    await userEvent.click(screen.getAllByRole("button", { name: /play /i })[1]!);
+
+    expect(store.getState().queue.length).toBe(2);
+    expect(store.getState().currentIndex).toBe(1);
+    expect(store.getState().isPlaying).toBe(true);
   });
 });

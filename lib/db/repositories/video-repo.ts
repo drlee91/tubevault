@@ -1,10 +1,14 @@
 import { eq, and, notExists, sql } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { videos, playlistItems } from "@/lib/db/schema";
+import { videos, playlistItems, mediaFiles } from "@/lib/db/schema";
 import type * as schema from "@/lib/db/schema";
 import type { AvailabilityStatus, ProviderId } from "@/lib/providers/types";
 
 export type VideoRow = typeof videos.$inferSelect;
+
+export interface VideoWithKinds extends VideoRow {
+  availableKinds: Array<"audio" | "video">;
+}
 
 export interface UpsertVideoInput {
   provider: ProviderId;
@@ -97,6 +101,24 @@ export class VideoRepo {
       )
       .orderBy(sql`${videos.createdAt} DESC`)
       .all();
+  }
+
+  listStandaloneWithKinds(): VideoWithKinds[] {
+    const rows = this.listStandalone();
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+    const kinds = this.db
+      .select({ videoId: mediaFiles.videoId, kind: mediaFiles.kind })
+      .from(mediaFiles)
+      .where(sql`${mediaFiles.videoId} IN (${sql.join(ids.map((i) => sql`${i}`), sql`, `)})`)
+      .all();
+    const byVideo = new Map<number, Array<"audio" | "video">>();
+    for (const k of kinds) {
+      const arr = byVideo.get(k.videoId) ?? [];
+      arr.push(k.kind as "audio" | "video");
+      byVideo.set(k.videoId, arr);
+    }
+    return rows.map((r) => ({ ...r, availableKinds: byVideo.get(r.id) ?? [] }));
   }
 
   setAvailability(id: number, status: AvailabilityStatus, reason: string | null): void {

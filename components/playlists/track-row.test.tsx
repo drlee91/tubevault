@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
 import { TrackRow } from "./track-row";
 
@@ -29,6 +30,7 @@ function makeItem(overrides: Partial<PlaylistDetailItem> = {}): PlaylistDetailIt
     audioFile: null,
     videoFile: null,
     pendingJob: null,
+    availableKinds: [],
     ...overrides,
   };
 }
@@ -81,5 +83,19 @@ describe("TrackRow", () => {
     expect(screen.getByText("removed")).toBeInTheDocument();
     // JobStatusPill should NOT be present (no running/queued/etc text)
     expect(screen.queryByText("running")).not.toBeInTheDocument();
+  });
+});
+
+describe("TrackRow click", () => {
+  it("invokes onPlay when row clicked", async () => {
+    const onPlay = vi.fn();
+    render(<TrackRow item={makeItem()} position={0} onPlay={onPlay} />);
+    await userEvent.click(screen.getByRole("button", { name: /play test video title/i }));
+    expect(onPlay).toHaveBeenCalled();
+  });
+
+  it("renders NowPlayingIndicator when isCurrent", () => {
+    render(<TrackRow item={makeItem()} position={0} onPlay={() => {}} isCurrent isPlaying />);
+    expect(screen.getByLabelText("Now playing")).toBeInTheDocument();
   });
 });

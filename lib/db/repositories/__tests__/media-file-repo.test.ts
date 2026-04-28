@@ -59,4 +59,36 @@ describe("MediaFileRepo", () => {
       sqlite.close();
     }
   });
+
+  it("byId returns the row when present", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const videoId = videoFor(db);
+      const repo = new MediaFileRepo(db);
+      const id = repo.insert({
+        videoId,
+        kind: "audio",
+        filePath: "/p/a.mp3",
+        format: "mp3",
+        quality: "192kbps",
+        fileSizeBytes: 100,
+        durationSeconds: 100,
+      });
+      const row = repo.byId(id);
+      expect(row?.id).toBe(id);
+      expect(row?.filePath).toBe("/p/a.mp3");
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it("byId returns null for unknown id", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const repo = new MediaFileRepo(db);
+      expect(repo.byId(99999)).toBeNull();
+    } finally {
+      sqlite.close();
+    }
+  });
 });

@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import * as hookMod from "@/lib/client/use-standalone-videos";
 import { StandaloneList } from "./standalone-list";
+import { PlayerStoreProvider } from "@/lib/client/use-player-store";
+import { createPlayerStore } from "@/lib/player/store";
 
 const baseHook = {
   error: undefined,
@@ -71,4 +74,20 @@ describe("StandaloneList", () => {
     expect(screen.getByText("My Test Video")).toBeInTheDocument();
     expect(screen.getByText("Test Channel")).toBeInTheDocument();
   });
+});
+
+it("clicking a row plays the standalone video", async () => {
+  vi.spyOn(hookMod, "useStandaloneVideos").mockReturnValue({
+    ...baseHook,
+    data: { videos: [{ ...videoFixture, availableKinds: ["audio" as const] }] },
+  } as unknown as ReturnType<typeof hookMod.useStandaloneVideos>);
+  const store = createPlayerStore();
+  render(
+    <PlayerStoreProvider store={store}>
+      <StandaloneList />
+    </PlayerStoreProvider>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: /play /i }));
+  expect(store.getState().queue.length).toBe(1);
+  expect(store.getState().isPlaying).toBe(true);
 });

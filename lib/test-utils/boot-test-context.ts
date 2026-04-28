@@ -17,6 +17,7 @@ import { SettingsService } from "@/lib/services/settings-service";
 import { SelfCheckService } from "@/lib/services/self-check-service";
 import { PlaylistService } from "@/lib/services/playlist-service";
 import { VideoService } from "@/lib/services/video-service";
+import { MediaFileService } from "@/lib/services/media-file-service";
 import { SyncService } from "@/lib/services/sync-service";
 import { DownloadService, type DownloadServiceSettings } from "@/lib/services/download-service";
 import { SyncPlaylistHandler } from "@/lib/jobs/handlers/sync-playlist";
@@ -133,6 +134,7 @@ export interface TestBootContext {
   downloadService: DownloadService;
   playlistService: PlaylistService;
   videoService: VideoService;
+  mediaFileService: MediaFileService;
   // Individual repos exposed for test seeding
   playlistRepo: PlaylistRepo;
   videoRepo: VideoRepo;
@@ -213,6 +215,7 @@ export async function createTestBootContext(
 
   const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, mediaFileRepo: mediaRepo, queue, registry });
   const videoService = new VideoService({ videoRepo, queue, registry });
+  const mediaFileService = new MediaFileService({ mediaFileRepo: mediaRepo });
 
   // Worker pool: when withHandlers=true, real handlers are wired so the drain
   // helper can process jobs. Pool is NOT started (no setInterval), so jobs only
@@ -241,6 +244,7 @@ export async function createTestBootContext(
     downloadService,
     playlistService,
     videoService,
+    mediaFileService,
     playlistRepo,
     videoRepo,
     itemRepo,

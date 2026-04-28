@@ -45,7 +45,7 @@ describe("GET /api/videos (standalone)", () => {
   });
 
   it("returns standalone videos only", async () => {
-    const _standaloneId = ctx.videoRepo.upsert({
+    const standaloneId = ctx.videoRepo.upsert({
       provider: "youtube",
       externalId: "yt:standalone-1",
       title: "Standalone Video",
@@ -53,6 +53,15 @@ describe("GET /api/videos (standalone)", () => {
       durationSeconds: 120,
       thumbnailUrl: null,
       availabilityStatus: "available",
+    });
+    ctx.mediaFileRepo.insert({
+      videoId: standaloneId,
+      kind: "audio",
+      filePath: "/p/a.mp3",
+      format: "mp3",
+      quality: "192",
+      fileSizeBytes: 1,
+      durationSeconds: 1,
     });
 
     const playlistId = ctx.playlistRepo.create({
@@ -77,5 +86,7 @@ describe("GET /api/videos (standalone)", () => {
     const body = await res.json();
     expect(body.videos.map((v: { externalId: string }) => v.externalId)).toContain("yt:standalone-1");
     expect(body.videos.map((v: { externalId: string }) => v.externalId)).not.toContain("yt:in-playlist");
+    const standalone = body.videos.find((v: { externalId: string }) => v.externalId === "yt:standalone-1");
+    expect(standalone.availableKinds).toEqual(["audio"]);
   });
 });

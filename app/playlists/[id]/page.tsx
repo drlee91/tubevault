@@ -14,7 +14,11 @@ export default async function PlaylistDetailPage({
   if (!detail) notFound();
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
-      <PlaylistDetailHeader playlist={detail.playlist} />
+      <PlaylistDetailHeader
+        playlist={detail.playlist}
+        items={detail.items}
+        defaultFormat={detail.playlist.defaultFormat}
+      />
       {detail.items.length === 0 ? (
         <EmptyState
           icon={ListMusic}

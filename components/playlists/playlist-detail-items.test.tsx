@@ -15,6 +15,16 @@ vi.mock("./track-row", () => ({
   ),
 }));
 
+// Mock player store so TrackTable doesn't require PlayerStoreProvider in these tests
+vi.mock("@/lib/client/use-player-store", () => {
+  const store = { getState: () => ({ setQueue: () => {}, play: () => {} }), subscribe: () => () => {} };
+  return {
+    usePlayerStore: () => undefined,
+    usePlayerStoreApi: () => store,
+    PlayerStoreProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  };
+});
+
 beforeEach(() => vi.restoreAllMocks());
 
 const playlistFixture = {
@@ -50,6 +60,7 @@ const itemFixture = {
   audioFile: null,
   videoFile: null,
   pendingJob: null,
+  availableKinds: [],
 };
 
 const initialData: PlaylistDetailDto = {

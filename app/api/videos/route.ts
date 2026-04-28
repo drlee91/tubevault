@@ -5,7 +5,7 @@ import { parseJsonBody, jsonError, ensureBootedOrTest } from "@/lib/api/helpers"
 
 export async function GET(_req: Request) {
   const ctx = await ensureBootedOrTest();
-  const videos = ctx.videoService.listStandalone();
+  const videos = ctx.videoService.listStandaloneWithKinds();
   return Response.json({ videos });
 }
 

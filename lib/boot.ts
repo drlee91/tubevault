@@ -17,6 +17,7 @@ import { SyncService } from "@/lib/services/sync-service";
 import { DownloadService, type DownloadServiceSettings } from "@/lib/services/download-service";
 import { PlaylistService } from "@/lib/services/playlist-service";
 import { VideoService } from "@/lib/services/video-service";
+import { MediaFileService } from "@/lib/services/media-file-service";
 import { SyncPlaylistHandler } from "@/lib/jobs/handlers/sync-playlist";
 import { DownloadVideoHandler } from "@/lib/jobs/handlers/download-video";
 import { CheckAvailabilityHandler } from "@/lib/jobs/handlers/check-availability";
@@ -35,6 +36,7 @@ export interface BootContext {
   playlistService: PlaylistService;
   videoService: VideoService;
   mediaFileRepo: MediaFileRepo;
+  mediaFileService: MediaFileService;
 }
 
 // Cache the boot promise rather than a boolean. A failed migration leaves the
@@ -125,6 +127,7 @@ async function doBoot(): Promise<BootContext> {
 
   const playlistService = new PlaylistService({ playlistRepo, itemRepo, syncRunRepo, mediaFileRepo: mediaRepo, queue, registry });
   const videoService = new VideoService({ videoRepo, queue, registry });
+  const mediaFileService = new MediaFileService({ mediaFileRepo: mediaRepo });
 
   const handlers = new Map<JobType, JobHandler>([
     ["sync_playlist", new SyncPlaylistHandler(syncService)],
@@ -150,6 +153,7 @@ async function doBoot(): Promise<BootContext> {
     playlistService,
     videoService,
     mediaFileRepo: mediaRepo,
+    mediaFileService,
   };
 }
 

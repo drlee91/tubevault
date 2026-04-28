@@ -1,7 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { PlaylistDetailHeader } from "./playlist-detail-header";
 import type { PlaylistStatsRow } from "@/lib/services/playlist-service";
+import type { PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
+import { PlayerStoreProvider } from "@/lib/client/use-player-store";
+import { createPlayerStore } from "@/lib/player/store";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -37,6 +41,35 @@ function makePlaylist(overrides: Partial<PlaylistStatsRow> = {}): PlaylistStatsR
   };
 }
 
+function makeItem(overrides: Partial<PlaylistDetailItem> = {}): PlaylistDetailItem {
+  return {
+    position: 0,
+    inPlaylist: true,
+    addedAt: "2024-01-01T00:00:00.000Z",
+    removedFromPlaylistAt: null,
+    video: {
+      id: 1,
+      externalId: "abc123",
+      title: "Track One",
+      channelTitle: "Channel",
+      durationSeconds: 180,
+      thumbnailUrl: null,
+      availabilityStatus: "available",
+      availabilityReason: null,
+    },
+    audioFile: null,
+    videoFile: null,
+    pendingJob: null,
+    availableKinds: ["audio"],
+    ...overrides,
+  };
+}
+
+const twoItems: PlaylistDetailItem[] = [
+  makeItem({ position: 0, video: { id: 1, externalId: "v1", title: "Track One", channelTitle: null, durationSeconds: 120, thumbnailUrl: null, availabilityStatus: "available", availabilityReason: null }, availableKinds: ["audio"] }),
+  makeItem({ position: 1, video: { id: 2, externalId: "v2", title: "Track Two", channelTitle: null, durationSeconds: 180, thumbnailUrl: null, availabilityStatus: "available", availabilityReason: null }, availableKinds: ["audio"] }),
+];
+
 describe("PlaylistDetailHeader", () => {
   it("renders title, counts, and 'never' when lastSyncedAt is null", () => {
     render(<PlaylistDetailHeader playlist={makePlaylist()} />);
@@ -56,4 +89,28 @@ describe("PlaylistDetailHeader", () => {
     render(<PlaylistDetailHeader playlist={makePlaylist({ activeSyncRunId: 42 })} />);
     expect(screen.getByRole("button", { name: /sync now/i })).toBeDisabled();
   });
+});
+
+it("Play All sets queue with shuffle off", async () => {
+  const store = createPlayerStore();
+  render(
+    <PlayerStoreProvider store={store}>
+      <PlaylistDetailHeader playlist={makePlaylist()} items={twoItems} defaultFormat="audio" />
+    </PlayerStoreProvider>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: /play all/i }));
+  expect(store.getState().queue.length).toBe(2);
+  expect(store.getState().shuffle).toBe(false);
+  expect(store.getState().isPlaying).toBe(true);
+});
+
+it("Shuffle Play turns shuffle on", async () => {
+  const store = createPlayerStore();
+  render(
+    <PlayerStoreProvider store={store}>
+      <PlaylistDetailHeader playlist={makePlaylist()} items={twoItems} defaultFormat="audio" />
+    </PlayerStoreProvider>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: /shuffle play/i }));
+  expect(store.getState().shuffle).toBe(true);
 });

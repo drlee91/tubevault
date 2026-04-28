@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createTestDb } from "@/lib/db/__tests__/test-db";
 import { VideoRepo } from "../video-repo";
+import { MediaFileRepo } from "../media-file-repo";
 
 describe("VideoRepo", () => {
   it("upsert inserts when not present, updates when present", () => {
@@ -59,6 +60,26 @@ describe("VideoRepo", () => {
       const row = repo.byId(id)!;
       expect(row.availabilityStatus).toBe("removed");
       expect(row.availabilityReason).toBe("removed by user");
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it("listStandaloneWithKinds includes availableKinds derived from media_files", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const videoRepo = new VideoRepo(db);
+      const mediaRepo = new MediaFileRepo(db);
+      const id = videoRepo.upsert({
+        provider: "youtube", externalId: "v1", title: "T", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      mediaRepo.insert({
+        videoId: id, kind: "audio", filePath: "/p/a.mp3",
+        format: "mp3", quality: "192", fileSizeBytes: 1, durationSeconds: 1,
+      });
+      const rows = videoRepo.listStandaloneWithKinds();
+      expect(rows[0]!.availableKinds).toEqual(["audio"]);
     } finally {
       sqlite.close();
     }
