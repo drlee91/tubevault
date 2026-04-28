@@ -3,7 +3,13 @@
 export interface MediaFileMap { audio: number | null; video: number | null; }
 
 export interface MediaFileResolver {
-  get(videoId: number, kind: "audio" | "video"): number | null;
+  /**
+   * Returns:
+   * - `number`    → file found
+   * - `null`      → cached; file definitively not available
+   * - `undefined` → not yet cached (fetch not yet started or complete)
+   */
+  get(videoId: number, kind: "audio" | "video"): number | null | undefined;
   fetchAndCache(videoId: number): Promise<MediaFileMap>;
 }
 
@@ -11,7 +17,11 @@ export function createMediaFileResolver(): MediaFileResolver {
   const cache = new Map<number, MediaFileMap>();
   const inflight = new Map<number, Promise<MediaFileMap>>();
   return {
-    get(videoId, kind) { return cache.get(videoId)?.[kind] ?? null; },
+    get(videoId, kind) {
+      const entry = cache.get(videoId);
+      if (!entry) return undefined; // not yet in cache
+      return entry[kind]; // number or null
+    },
     async fetchAndCache(videoId) {
       const existing = cache.get(videoId);
       if (existing) return existing;

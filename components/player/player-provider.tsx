@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPlayerStore } from "@/lib/player/store";
 import { attachPersist, hydrateFrom, STORAGE_KEY } from "@/lib/player/persist";
 import { attachKeyboard } from "@/lib/player/keyboard";
@@ -11,6 +11,7 @@ import { PlayerCore } from "./player-core";
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const store = useMemo(() => createPlayerStore(), []);
   const resolver = useMemo(() => createMediaFileResolver(), []);
+  const [cacheBump, setCacheBump] = useState(0);
 
   useEffect(() => {
     hydrateFrom(store, typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null);
@@ -26,16 +27,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     return () => { detachPersist(); detachKb(); detachMs(); unsub(); };
   }, [store]);
 
-  function resolve(videoId: number, kind: "audio" | "video"): number | null {
+  const resolve = useCallback((videoId: number, kind: "audio" | "video"): number | null | undefined => {
     const cached = resolver.get(videoId, kind);
-    if (cached != null) return cached;
-    void resolver.fetchAndCache(videoId);
-    return null;
-  }
+    if (cached !== undefined) return cached; // null = definitively missing, number = found
+    // Cache miss: fetch in-flight; bump state when done so PlayerCore re-renders.
+    void resolver.fetchAndCache(videoId).then(() => {
+      setCacheBump((n) => n + 1);
+    });
+    return undefined; // signal: still loading
+  }, [resolver]);
 
   return (
     <PlayerStoreProvider store={store}>
-      <PlayerCore resolveMediaFileId={resolve} />
+      <PlayerCore resolveMediaFileId={resolve} cacheVersion={cacheBump} />
       {children}
     </PlayerStoreProvider>
   );

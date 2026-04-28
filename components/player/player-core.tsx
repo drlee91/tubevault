@@ -4,10 +4,18 @@ import { toast } from "sonner";
 import { usePlayerStore, usePlayerStoreApi } from "@/lib/client/use-player-store";
 
 interface Props {
-  resolveMediaFileId: (videoId: number, kind: "audio" | "video") => number | null;
+  /**
+   * Resolve the media-file id for a given video + kind.
+   * - `number`    → id known, set src
+   * - `null`      → definitively not found (skip track)
+   * - `undefined` → not yet in cache; caller is fetching, re-render expected
+   */
+  resolveMediaFileId: (videoId: number, kind: "audio" | "video") => number | null | undefined;
+  /** Incremented by PlayerProvider each time the media-file cache gains new entries. Forces re-run of the src effect. */
+  cacheVersion?: number;
 }
 
-export function PlayerCore({ resolveMediaFileId }: Props) {
+export function PlayerCore({ resolveMediaFileId, cacheVersion = 0 }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const store = usePlayerStoreApi();
@@ -26,7 +34,11 @@ export function PlayerCore({ resolveMediaFileId }: Props) {
       return;
     }
     const id = resolveMediaFileId(item.videoId, currentKind);
-    if (id == null) {
+    if (id === undefined) {
+      // Cache miss — fetch is in-flight; wait for re-render after fetch completes.
+      return;
+    }
+    if (id === null) {
       toast.error(`Couldn't play '${item.title}' — file missing. Skipped.`);
       store.getState().markBrokenAndAdvance();
       return;
@@ -34,7 +46,7 @@ export function PlayerCore({ resolveMediaFileId }: Props) {
     const url = `/api/stream/${id}`;
     const el = currentKind === "audio" ? audioRef.current : videoRef.current;
     if (el && el.getAttribute("src") !== url) el.setAttribute("src", url);
-  }, [currentIndex, currentKind, queue, resolveMediaFileId, store]);
+  }, [currentIndex, currentKind, queue, resolveMediaFileId, store, cacheVersion]);
 
   useEffect(() => {
     const el = currentKind === "audio" ? audioRef.current : videoRef.current;
