@@ -93,6 +93,26 @@ export class SelfCheckService {
     }
   }
 
+  async checkYtdlp(path?: string): Promise<{ ok: true; version: string } | { ok: false; error: string }> {
+    const file = path ?? this.opts.ytdlpPath;
+    const result = await this.runner(file, ["--version"]);
+    if (result.ok) {
+      const firstLine = (result.output ?? "").split("\n")[0]?.trim() ?? "";
+      return { ok: true, version: firstLine || "unknown" };
+    }
+    return { ok: false, error: result.output ?? "not found" };
+  }
+
+  async checkFfmpeg(path?: string): Promise<{ ok: true; version: string } | { ok: false; error: string }> {
+    const file = path ?? this.opts.ffmpegPath;
+    const result = await this.runner(file, ["-version"]);
+    if (result.ok) {
+      const firstLine = (result.output ?? "").split("\n")[0]?.trim() ?? "";
+      return { ok: true, version: firstLine || "unknown" };
+    }
+    return { ok: false, error: result.output ?? "not found" };
+  }
+
   async checkPathWritable(p: string): Promise<boolean> {
     try {
       if (!existsSync(p)) return false;
