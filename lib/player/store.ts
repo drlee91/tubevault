@@ -126,7 +126,7 @@ export function createPlayerStore(): PlayerStore {
       set({ isPlaying: true });
     },
     pause() { set({ isPlaying: false }); },
-    togglePlay() { get().isPlaying ? get().pause() : get().play(); },
+    togglePlay() { if (get().isPlaying) { get().pause(); } else { get().play(); } },
 
     next() {
       const { queue, currentIndex, repeat } = get();
