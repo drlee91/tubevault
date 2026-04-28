@@ -17,7 +17,7 @@ export default async function PlaylistDetailPage({
       <PlaylistDetailHeader
         playlist={detail.playlist}
         items={detail.items}
-        defaultFormat={detail.playlist.defaultFormat as "audio" | "video"}
+        defaultFormat={detail.playlist.defaultFormat}
       />
       {detail.items.length === 0 ? (
         <EmptyState
