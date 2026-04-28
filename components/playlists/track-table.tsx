@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { TrackRow } from "./track-row";
 import type { PlaylistDetailItem } from "@/lib/services/playlist-service";
@@ -10,12 +10,14 @@ export function TrackTable({ items }: { items: PlaylistDetailItem[] }) {
   const sp = useSearchParams();
   const filter = sp.get("filter") ?? "all";
   const [q, setQ] = useState("");
+  const deferredQ = useDeferredValue(q);
 
+  const needle = deferredQ.toLowerCase();
   const filtered = items.filter((it) => {
     if (!it.inPlaylist) return false;
     if (filter === "available" && it.video.availabilityStatus !== "available") return false;
     if (filter === "unavailable" && it.video.availabilityStatus === "available") return false;
-    if (q && !it.video.title.toLowerCase().includes(q.toLowerCase())) return false;
+    if (needle && !it.video.title.toLowerCase().includes(needle)) return false;
     return true;
   });
 

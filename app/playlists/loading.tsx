@@ -1,9 +1,5 @@
-import { SkeletonRow } from "@/components/shared/skeleton-row";
+import { PlaylistsPageSkeleton } from "@/components/shared/page-skeletons";
 
 export default function Loading() {
-  return (
-    <div className="mx-auto max-w-5xl p-6">
-      <SkeletonRow />
-    </div>
-  );
+  return <PlaylistsPageSkeleton />;
 }

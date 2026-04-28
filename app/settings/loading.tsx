@@ -1,4 +1,5 @@
-import { SkeletonRow } from "@/components/shared/skeleton-row";
+import { SettingsPageSkeleton } from "@/components/shared/page-skeletons";
+
 export default function Loading() {
-  return <div className="mx-auto max-w-3xl p-6"><SkeletonRow /></div>;
+  return <SettingsPageSkeleton />;
 }
