@@ -3,6 +3,7 @@ import { createTestDb } from "@/lib/db/__tests__/test-db";
 import { PlaylistRepo } from "../playlist-repo";
 import { VideoRepo } from "../video-repo";
 import { PlaylistItemRepo } from "../playlist-item-repo";
+import { MediaFileRepo } from "../media-file-repo";
 
 function setup() {
   const { db, sqlite } = createTestDb();
@@ -55,6 +56,36 @@ describe("PlaylistItemRepo", () => {
       items.upsertActive(playlistId, v, 0);
       items.markRemoved(playlistId, v);
       expect(items.activeExternalIdsByPlaylist(playlistId)).toEqual([]);
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it("listWithJoinsForDetail returns availableKinds derived from media_files", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const playlistRepo = new PlaylistRepo(db);
+      const videoRepo = new VideoRepo(db);
+      const itemRepo = new PlaylistItemRepo(db);
+      const mediaRepo = new MediaFileRepo(db);
+      const pid = playlistRepo.create({
+        provider: "youtube",
+        externalId: "PL1",
+        url: "u",
+        defaultFormat: "audio",
+        title: "p",
+      });
+      const vid = videoRepo.upsert({
+        provider: "youtube", externalId: "v", title: "T", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      itemRepo.upsertActive(pid, vid, 0);
+      mediaRepo.insert({
+        videoId: vid, kind: "audio", filePath: "/p/a.mp3",
+        format: "mp3", quality: "192", fileSizeBytes: 1, durationSeconds: 1,
+      });
+      const items = itemRepo.listWithJoinsForDetail(pid);
+      expect(items[0]!.availableKinds).toEqual(["audio"]);
     } finally {
       sqlite.close();
     }

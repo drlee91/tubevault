@@ -50,6 +50,7 @@ const itemFixture = {
   audioFile: null,
   videoFile: null,
   pendingJob: null,
+  availableKinds: [],
 };
 
 const initialData: PlaylistDetailDto = {

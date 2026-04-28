@@ -29,6 +29,7 @@ function makeItem(overrides: Partial<PlaylistDetailItem> = {}): PlaylistDetailIt
     audioFile: null,
     videoFile: null,
     pendingJob: null,
+    availableKinds: [],
     ...overrides,
   };
 }

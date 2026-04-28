@@ -21,6 +21,7 @@ export interface PlaylistDetailItem {
   audioFile: { id: number; format: string; quality: string; fileSizeBytes: number; downloadedAt: string } | null;
   videoFile: { id: number; format: string; quality: string; fileSizeBytes: number; downloadedAt: string } | null;
   pendingJob: { id: number; type: string; status: string; attempts: number; lastError: string | null } | null;
+  availableKinds: Array<"audio" | "video">;
 }
 
 export class PlaylistItemRepo {
@@ -159,6 +160,12 @@ export class PlaylistItemRepo {
             lastError: r["job_last_error"] as string | null,
           }
         : null,
+      availableKinds: (() => {
+        const kinds: Array<"audio" | "video"> = [];
+        if (r["audio_id"] != null) kinds.push("audio");
+        if (r["video_file_id"] != null) kinds.push("video");
+        return kinds;
+      })(),
     }));
   }
 }
