@@ -125,3 +125,49 @@ describe("GET /api/stream/:mediaFileId — range edges", () => {
     expect(res.status).toBe(416);
   });
 });
+
+describe("GET /api/stream/:mediaFileId — 404 + mime", () => {
+  it("404 when mediaFileId unknown", async () => {
+    const res = await GET(
+      new Request(`http://x/api/stream/99999`),
+      { params: Promise.resolve({ mediaFileId: "99999" }) },
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("404 when DB row exists but file missing on disk", async () => {
+    await fs.unlink(ctx.mediaFileRepo.byId(mediaFileId)!.filePath);
+    const res = await call();
+    expect(res.status).toBe(404);
+  });
+
+  it("404 when mediaFileId is non-numeric", async () => {
+    const res = await GET(
+      new Request(`http://x/api/stream/abc`),
+      { params: Promise.resolve({ mediaFileId: "abc" }) },
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("uses video/mp4 for an mp4 file", async () => {
+    // re-seed with mp4
+    const tmp2 = await fs.mkdtemp(path.join(os.tmpdir(), "tubevault-stream-mp4-"));
+    const filePath = path.join(tmp2, "clip.mp4");
+    await fs.writeFile(filePath, Buffer.alloc(64, 0));
+    const newId = ctx.mediaFileRepo.insert({
+      videoId: ctx.mediaFileRepo.byId(mediaFileId)!.videoId,
+      kind: "video",
+      filePath,
+      format: "mp4",
+      quality: "1080p",
+      fileSizeBytes: 64,
+      durationSeconds: 60,
+    });
+    const res = await GET(
+      new Request(`http://x/api/stream/${newId}`),
+      { params: Promise.resolve({ mediaFileId: String(newId) }) },
+    );
+    expect(res.headers.get("Content-Type")).toBe("video/mp4");
+    await fs.rm(tmp2, { recursive: true, force: true });
+  });
+});
