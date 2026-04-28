@@ -84,3 +84,44 @@ describe("GET /api/stream/:mediaFileId — happy path", () => {
     expect(res.headers.get("Cache-Control")).toBe("private, max-age=3600");
   });
 });
+
+describe("GET /api/stream/:mediaFileId — range edges", () => {
+  it("206 partial for bytes=100-", async () => {
+    const res = await call({ Range: "bytes=100-" });
+    expect(res.status).toBe(206);
+    expect(res.headers.get("Content-Range")).toBe("bytes 100-1023/1024");
+    expect(res.headers.get("Content-Length")).toBe("924");
+  });
+
+  it("206 partial for bytes=100-199 (closed range)", async () => {
+    const res = await call({ Range: "bytes=100-199" });
+    expect(res.status).toBe(206);
+    expect(res.headers.get("Content-Range")).toBe("bytes 100-199/1024");
+    expect(res.headers.get("Content-Length")).toBe("100");
+    const buf = Buffer.from(await res.arrayBuffer());
+    expect(buf.length).toBe(100);
+  });
+
+  it("206 partial for bytes=0-1 (Safari probe)", async () => {
+    const res = await call({ Range: "bytes=0-1" });
+    expect(res.status).toBe(206);
+    expect(res.headers.get("Content-Range")).toBe("bytes 0-1/1024");
+    expect(res.headers.get("Content-Length")).toBe("2");
+  });
+
+  it("416 when start >= size", async () => {
+    const res = await call({ Range: "bytes=2000-" });
+    expect(res.status).toBe(416);
+    expect(res.headers.get("Content-Range")).toBe("bytes */1024");
+  });
+
+  it("416 on malformed Range header", async () => {
+    const res = await call({ Range: "blocks=0-99" });
+    expect(res.status).toBe(416);
+  });
+
+  it("416 on bytes=- (no numbers)", async () => {
+    const res = await call({ Range: "bytes=-" });
+    expect(res.status).toBe(416);
+  });
+});
