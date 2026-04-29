@@ -18,7 +18,13 @@ const config = [
     },
   },
   {
-    ignores: ["node_modules/**", ".next/**", "drizzle/migrations/**", "next-env.d.ts"],
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      ".worktrees/**",
+      "drizzle/migrations/**",
+      "next-env.d.ts",
+    ],
   },
 ];
 

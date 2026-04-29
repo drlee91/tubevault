@@ -26,6 +26,7 @@ export default defineConfig({
           exclude: [
             "**/node_modules/**",
             "**/.next/**",
+            "**/.worktrees/**",
             "app/**/*.test.tsx",
             "components/**/*.test.tsx",
           ],
@@ -37,6 +38,7 @@ export default defineConfig({
           name: "dom",
           environment: "happy-dom",
           include: ["app/**/*.test.tsx", "components/**/*.test.tsx", "lib/client/**/*.test.tsx", "tests/integration/**/*.test.tsx"],
+          exclude: ["**/node_modules/**", "**/.next/**", "**/.worktrees/**"],
         },
       },
     ],
