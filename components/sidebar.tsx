@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { Home, Library, Activity, ListMusic } from "lucide-react";
+import { Home, Library, Activity } from "lucide-react";
 
 const links = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/library", label: "Library", icon: Library },
+  { href: "/playlists", label: "Library", icon: Library },
   { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/playlists", label: "Playlists", icon: ListMusic },
 ];
 
 export function Sidebar() {
