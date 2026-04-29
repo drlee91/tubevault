@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir, platform } from "node:os";
 import path from "node:path";
 import { SelfCheckService, type CheckRunner } from "./self-check-service";
@@ -244,7 +244,7 @@ describe("SelfCheckService", () => {
       expect(await svc.checkPathWritable(tempDir)).toBe(true);
     });
 
-    it("returns false for a non-existent path", async () => {
+    it("returns false for a non-creatable path (mkdir fails)", async () => {
       const svc = new SelfCheckService({
         ytdlpPath: "yt-dlp",
         ffmpegPath: "ffmpeg",
@@ -253,6 +253,20 @@ describe("SelfCheckService", () => {
         dbPath: path.join(tempDir, "db.sqlite"),
       });
       expect(await svc.checkPathWritable(UNWRITABLE_PATH)).toBe(false);
+    });
+
+    it("creates the directory if missing and returns true", async () => {
+      const svc = new SelfCheckService({
+        ytdlpPath: "yt-dlp",
+        ffmpegPath: "ffmpeg",
+        audioStoragePath: tempDir,
+        videoStoragePath: tempDir,
+        dbPath: path.join(tempDir, "db.sqlite"),
+      });
+      const newPath = path.join(tempDir, "nested", "audio");
+      expect(existsSync(newPath)).toBe(false);
+      expect(await svc.checkPathWritable(newPath)).toBe(true);
+      expect(existsSync(newPath)).toBe(true);
     });
 
     it("returns false for a file (not a directory)", async () => {

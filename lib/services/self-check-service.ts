@@ -115,8 +115,11 @@ export class SelfCheckService {
 
   async checkPathWritable(p: string): Promise<boolean> {
     try {
-      if (!existsSync(p)) return false;
-      if (!statSync(p).isDirectory()) return false;
+      if (existsSync(p)) {
+        if (!statSync(p).isDirectory()) return false;
+      } else {
+        mkdirSync(p, { recursive: true });
+      }
       accessSync(p, constants.W_OK);
       return true;
     } catch { return false; }

@@ -1,10 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import path from "node:path";
+import { platform, tmpdir } from "node:os";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { updateSettingsAction } from "./settings-actions";
 import { createTestBootContext, type TestBootContext } from "@/lib/test-utils/boot-test-context";
 import { __setBootContextForTesting } from "@/lib/test-utils/server-action-overrides";
+
+// On Windows the literal "/non/existent/..." resolves to the current drive root
+// (C:\non\existent\...) where mkdir will succeed — so the unwritable path must
+// target a non-existent drive letter. POSIX systems can't write under root.
+const UNWRITABLE_PATH =
+  platform() === "win32" ? "Z:\\nonexistent\\forbidden\\path" : "/proc/1/forbidden";
 
 describe("updateSettingsAction", () => {
   let ctx: TestBootContext;
@@ -81,10 +90,8 @@ describe("updateSettingsAction", () => {
     if (!res.ok) expect(res.error.code).toBe("VALIDATION_FAILED");
   });
 
-  it("STORAGE_PATH_INVALID — non-existent audio path returns correct field", async () => {
-    const res = await updateSettingsAction({
-      audioStoragePath: "/non/existent/dir/that/should/never/exist",
-    });
+  it("STORAGE_PATH_INVALID — non-creatable audio path returns correct field", async () => {
+    const res = await updateSettingsAction({ audioStoragePath: UNWRITABLE_PATH });
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.code).toBe("STORAGE_PATH_INVALID");
@@ -92,14 +99,26 @@ describe("updateSettingsAction", () => {
     }
   });
 
-  it("STORAGE_PATH_INVALID — non-existent video path returns correct field", async () => {
-    const res = await updateSettingsAction({
-      videoStoragePath: "/non/existent/dir/that/should/never/exist",
-    });
+  it("STORAGE_PATH_INVALID — non-creatable video path returns correct field", async () => {
+    const res = await updateSettingsAction({ videoStoragePath: UNWRITABLE_PATH });
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.code).toBe("STORAGE_PATH_INVALID");
       expect(res.error.field).toBe("videoStoragePath");
+    }
+  });
+
+  it("creates a missing audio path on save and persists it", async () => {
+    const baseTmp = mkdtempSync(path.join(tmpdir(), "tubevault-settings-action-"));
+    try {
+      const newPath = path.join(baseTmp, "downloads", "audio");
+      expect(existsSync(newPath)).toBe(false);
+      const res = await updateSettingsAction({ audioStoragePath: newPath });
+      expect(res.ok).toBe(true);
+      expect(existsSync(newPath)).toBe(true);
+      expect(ctx.settingsService.getAudioStoragePath()).toBe(newPath);
+    } finally {
+      rmSync(baseTmp, { recursive: true, force: true });
     }
   });
 });
