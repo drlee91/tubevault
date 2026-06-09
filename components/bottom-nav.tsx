@@ -10,7 +10,7 @@ const items = [
 
 export function BottomNav() {
   return (
-    <nav className="sticky bottom-0 z-10 grid grid-cols-4 border-t border-[var(--color-border)] bg-[var(--color-bg)] md:hidden">
+    <nav className="sticky bottom-0 z-10 grid grid-cols-4 border-t border-[var(--color-line)] bg-[var(--color-bg)] md:hidden">
       {items.map((it) => (
         <Link
           key={it.href}

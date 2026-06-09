@@ -33,7 +33,7 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, default
         type="button"
         aria-label={`Play ${item.video.title}`}
         onClick={onPlay}
-        className="flex w-8 shrink-0 items-center justify-end text-xs text-[var(--color-muted)] tabular-nums"
+        className="flex w-8 shrink-0 items-center justify-end text-xs text-[var(--color-fg-muted)] tabular-nums"
       >
         {isCurrent ? <NowPlayingIndicator isPlaying={!!isPlaying} /> : position + 1}
       </button>
@@ -49,12 +49,12 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, default
       )}
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium">{item.video.title}</div>
-        <div className="truncate text-xs text-[var(--color-muted)]">{item.video.channelTitle}</div>
+        <div className="truncate text-xs text-[var(--color-fg-muted)]">{item.video.channelTitle}</div>
       </div>
-      <div className="hidden w-16 text-right text-xs text-[var(--color-muted)] tabular-nums md:block">
+      <div className="hidden w-16 text-right text-xs text-[var(--color-fg-muted)] tabular-nums md:block">
         <Duration seconds={item.video.durationSeconds} />
       </div>
-      <div className="hidden w-20 text-right text-xs text-[var(--color-muted)] md:block">
+      <div className="hidden w-20 text-right text-xs text-[var(--color-fg-muted)] md:block">
         <RelativeTime iso={item.addedAt} />
       </div>
       {/* Downloaded media on disk — one icon per kind, empty when nothing is local. */}

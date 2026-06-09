@@ -14,7 +14,7 @@ export function MobilePlayerSheet() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-14 z-10 flex h-14 items-center gap-2 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-3 md:hidden">
+      <div className="fixed inset-x-0 bottom-14 z-10 flex h-14 items-center gap-2 border-t border-[var(--color-line)] bg-[var(--color-bg)] px-3 md:hidden">
         <button
           type="button"
           aria-label="Open player"

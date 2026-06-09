@@ -25,7 +25,7 @@ export function ItemFilterChips() {
           className={`rounded-md px-3 py-1 text-xs ${
             current === f
               ? "bg-[var(--color-fg)] text-[var(--color-bg)]"
-              : "bg-[var(--color-muted-bg)] text-[var(--color-muted)] hover:text-[var(--color-fg)]"
+              : "bg-[var(--color-muted-bg)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
           }`}
         >
           {f}

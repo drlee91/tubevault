@@ -9,21 +9,21 @@ export function PlaylistCard({ p }: { p: PlaylistStatsRow }) {
   return (
     <Link
       href={`/playlists/${p.id}`}
-      className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+      className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
     >
-      <Card className="transition-colors hover:border-[var(--color-accent)]">
+      <Card className="transition-colors hover:border-[var(--color-brand)]">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <ListMusic className="h-5 w-5 text-[var(--color-muted)]" />
+            <ListMusic className="h-5 w-5 text-[var(--color-fg-muted)]" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="truncate text-sm font-medium">{p.title ?? p.url}</h3>
-                {syncing && <RefreshCw className="h-3 w-3 animate-spin text-[var(--color-accent)]" aria-label="syncing" />}
+                {syncing && <RefreshCw className="h-3 w-3 animate-spin text-[var(--color-brand)]" aria-label="syncing" />}
               </div>
-              <p className="text-xs text-[var(--color-muted)]">
+              <p className="text-xs text-[var(--color-fg-muted)]">
                 {p.channelTitle ?? "—"} · {p.stats.totalItems} items · {p.stats.downloadedItems} downloaded
               </p>
-              <p className="mt-1 text-xs text-[var(--color-muted)]">
+              <p className="mt-1 text-xs text-[var(--color-fg-muted)]">
                 last sync: <RelativeTime iso={p.lastSyncedAt} />
               </p>
             </div>

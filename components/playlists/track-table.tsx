@@ -61,7 +61,7 @@ export function TrackTable({ items, defaultFormat }: Props) {
         ))}
       </div>
       {filtered.length === 0 && (
-        <p className="py-8 text-center text-sm text-[var(--color-muted)]">No items match.</p>
+        <p className="py-8 text-center text-sm text-[var(--color-fg-muted)]">No items match.</p>
       )}
     </div>
   );

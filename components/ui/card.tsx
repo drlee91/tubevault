@@ -6,7 +6,7 @@ export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
     <div
       ref={ref}
       className={cn(
-        "rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]",
+        "rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)]",
         className,
       )}
       {...props}
@@ -19,7 +19,7 @@ export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("border-b border-[var(--color-border)] p-4", className)}
+      className={cn("border-b border-[var(--color-line)] p-4", className)}
       {...props}
     />
   ),

@@ -24,10 +24,10 @@ export function StatsCards({ data }: Props) {
         <Card key={it.label}>
           <CardContent className="flex items-center justify-between p-4">
             <div>
-              <div className="text-xs text-[var(--color-muted)]">{it.label}</div>
+              <div className="text-xs text-[var(--color-fg-muted)]">{it.label}</div>
               <div className="mt-1 text-2xl font-semibold tabular-nums">{it.value}</div>
             </div>
-            <it.icon className="h-5 w-5 text-[var(--color-muted)]" aria-hidden />
+            <it.icon className="h-5 w-5 text-[var(--color-fg-muted)]" aria-hidden />
           </CardContent>
         </Card>
       ))}

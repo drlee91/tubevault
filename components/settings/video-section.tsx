@@ -55,7 +55,7 @@ export function VideoSection({ initial }: Props) {
     <section className="space-y-6">
       <div>
         <h2 className="text-base font-medium">Video</h2>
-        <p className="text-sm text-[var(--color-muted)]">
+        <p className="text-sm text-[var(--color-fg-muted)]">
           Default resolution for video downloads.
         </p>
       </div>

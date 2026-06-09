@@ -80,7 +80,7 @@ export function AdvancedSection({ initial }: Props) {
     <section className="space-y-6">
       <div>
         <h2 className="text-base font-medium">Advanced</h2>
-        <p className="text-sm text-[var(--color-muted)]">
+        <p className="text-sm text-[var(--color-fg-muted)]">
           External tools for downloading and post-processing.
         </p>
       </div>
@@ -88,7 +88,7 @@ export function AdvancedSection({ initial }: Props) {
       {/* yt-dlp */}
       <div className="space-y-2">
         <Label htmlFor="ytdlp-path">yt-dlp path</Label>
-        <p className="text-xs text-[var(--color-muted)]">
+        <p className="text-xs text-[var(--color-fg-muted)]">
           Full path to the yt-dlp binary. Leave empty to use the system default.
         </p>
         <div className="flex items-center gap-2 max-w-xl">
@@ -144,7 +144,7 @@ export function AdvancedSection({ initial }: Props) {
       {/* ffmpeg */}
       <div className="space-y-2">
         <Label htmlFor="ffmpeg-path">ffmpeg path</Label>
-        <p className="text-xs text-[var(--color-muted)]">
+        <p className="text-xs text-[var(--color-fg-muted)]">
           Full path to the ffmpeg binary. Leave empty to use the system default.
         </p>
         <div className="flex items-center gap-2 max-w-xl">

@@ -37,7 +37,7 @@ export function PlayerBar() {
   const repeatLabel = repeat === "off" ? "Repeat off" : repeat === "all" ? "Repeat all" : "Repeat one";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 h-16 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
+    <div className="fixed inset-x-0 bottom-0 z-20 h-16 border-t border-[var(--color-line)] bg-[var(--color-bg)]">
       <div
         ref={stripeRef}
         role="slider"
@@ -64,11 +64,11 @@ export function PlayerBar() {
           )}
           <div className="min-w-0">
             <div className="truncate text-sm font-medium">{item.title}</div>
-            <div className="truncate text-xs text-[var(--color-muted)]">{item.channelTitle ?? ""}</div>
+            <div className="truncate text-xs text-[var(--color-fg-muted)]">{item.channelTitle ?? ""}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button aria-label="Shuffle" onClick={() => store.getState().toggleShuffle()} className={cn("p-1", shuffle && "text-[var(--color-accent)]")}>
+          <button aria-label="Shuffle" onClick={() => store.getState().toggleShuffle()} className={cn("p-1", shuffle && "text-[var(--color-brand)]")}>
             <Shuffle className="h-4 w-4" />
           </button>
           <button aria-label="Previous track" onClick={() => store.getState().prev()} className="p-1">
@@ -84,11 +84,11 @@ export function PlayerBar() {
           <button aria-label="Next track" onClick={() => store.getState().next()} className="p-1">
             <SkipForward className="h-5 w-5" />
           </button>
-          <button aria-label={repeatLabel} onClick={() => store.getState().cycleRepeat()} className={cn("p-1", repeat !== "off" && "text-[var(--color-accent)]")}>
+          <button aria-label={repeatLabel} onClick={() => store.getState().cycleRepeat()} className={cn("p-1", repeat !== "off" && "text-[var(--color-brand)]")}>
             <RepeatIcon className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex items-center justify-end gap-3 text-xs tabular-nums text-[var(--color-muted)]">
+        <div className="flex items-center justify-end gap-3 text-xs tabular-nums text-[var(--color-fg-muted)]">
           <span>{formatTime(position)} / {formatTime(duration)}</span>
           <button aria-label="Open queue" onClick={() => store.getState().openQueue()} className="p-1">
             <ListMusic className="h-4 w-4" />

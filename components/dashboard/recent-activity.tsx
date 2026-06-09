@@ -45,17 +45,17 @@ export function RecentActivity({ items }: Props) {
             <JobStatusPill status={pillStatus[it.status]} />
             <span className="flex-1 text-sm">
               {it.playlistTitle}
-              <span className="ml-2 text-[var(--color-muted)]">
+              <span className="ml-2 text-[var(--color-fg-muted)]">
                 +{it.videosAdded} −{it.videosRemoved} ⛔{it.videosUnavailable}
               </span>
             </span>
-            <span className="text-xs text-[var(--color-muted)]">
+            <span className="text-xs text-[var(--color-fg-muted)]">
               <RelativeTime iso={it.finishedAt} />
             </span>
           </>
         );
         const baseClass =
-          "flex items-center gap-3 rounded-md border border-[var(--color-border)] p-3";
+          "flex items-center gap-3 rounded-md border border-[var(--color-line)] p-3";
         return it.playlistId != null ? (
           <Link
             key={it.id}

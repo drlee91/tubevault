@@ -11,7 +11,7 @@ export default async function HomePage() {
     <div className="mx-auto max-w-5xl space-y-8 p-6">
       <header>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">Local archive overview</p>
+        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">Local archive overview</p>
       </header>
       <StatsCards data={stats} />
       <section>

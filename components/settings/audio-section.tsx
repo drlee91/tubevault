@@ -62,7 +62,7 @@ export function AudioSection({ initial }: Props) {
     <section className="space-y-6">
       <div>
         <h2 className="text-base font-medium">Audio</h2>
-        <p className="text-sm text-[var(--color-muted)]">
+        <p className="text-sm text-[var(--color-fg-muted)]">
           Default format and quality for audio downloads.
         </p>
       </div>
@@ -126,12 +126,12 @@ export function AudioSection({ initial }: Props) {
             control={form.control}
             name="embedThumbnails"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-[var(--color-border)] px-4 py-3">
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-[var(--color-line)] px-4 py-3">
                 <div className="space-y-0.5">
                   <FormLabel className="text-sm font-medium">
                     Embed thumbnails
                   </FormLabel>
-                  <p className="text-xs text-[var(--color-muted)]">
+                  <p className="text-xs text-[var(--color-fg-muted)]">
                     Embed cover art into the audio file metadata.
                   </p>
                 </div>

@@ -33,10 +33,10 @@ export function PlaylistDetailHeader({ playlist, items, defaultFormat = "audio" 
   }
 
   return (
-    <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-border)] pb-4">
+    <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-line)] pb-4">
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-2xl font-semibold">{playlist.title ?? "Untitled"}</h1>
-        <p className="text-sm text-[var(--color-muted)]">
+        <p className="text-sm text-[var(--color-fg-muted)]">
           {playlist.channelTitle ?? "—"} · {playlist.stats.totalItems} items ·{" "}
           {playlist.stats.downloadedItems} downloaded · last sync{" "}
           <RelativeTime iso={playlist.lastSyncedAt} />

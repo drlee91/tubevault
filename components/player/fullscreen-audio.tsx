@@ -45,12 +45,12 @@ export function FullscreenAudio() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.thumbnailUrl} alt="" className="h-full w-full rounded-lg object-cover" />
             ) : (
-              <Music className="h-16 w-16 text-[var(--color-muted)]" />
+              <Music className="h-16 w-16 text-[var(--color-fg-muted)]" />
             )}
           </div>
           <div className="text-center">
             <div className="text-xl font-semibold">{item.title}</div>
-            <div className="text-sm text-[var(--color-muted)]">{item.channelTitle ?? ""}</div>
+            <div className="text-sm text-[var(--color-fg-muted)]">{item.channelTitle ?? ""}</div>
           </div>
           <div className="w-full max-w-md">
             <input
@@ -62,7 +62,7 @@ export function FullscreenAudio() {
               onChange={(e) => store.getState().seek(Number(e.target.value))}
               className="w-full"
             />
-            <div className="flex justify-between text-xs tabular-nums text-[var(--color-muted)]">
+            <div className="flex justify-between text-xs tabular-nums text-[var(--color-fg-muted)]">
               <span>{fmt(position)}</span><span>{fmt(duration)}</span>
             </div>
           </div>
@@ -81,7 +81,7 @@ export function FullscreenAudio() {
       ) : (
         <div className="flex-1 overflow-auto"><QueueList /></div>
       )}
-      <nav role="tablist" className="flex justify-center gap-2 border-t border-[var(--color-border)] py-2">
+      <nav role="tablist" className="flex justify-center gap-2 border-t border-[var(--color-line)] py-2">
         <button role="tab" aria-selected={tab === "now"} onClick={() => setTab("now")} className="px-3 py-1 text-sm">Now Playing</button>
         <button role="tab" aria-selected={tab === "queue"} onClick={() => setTab("queue")} className="px-3 py-1 text-sm">Queue</button>
       </nav>

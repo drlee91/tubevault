@@ -71,13 +71,13 @@ export function StandaloneList() {
             >
               {currentVideoId === v.id
                 ? <NowPlayingIndicator isPlaying={isPlaying} />
-                : <span className="text-xs text-[var(--color-muted)]">{i + 1}</span>}
+                : <span className="text-xs text-[var(--color-fg-muted)]">{i + 1}</span>}
             </button>
             <span className="min-w-0 flex-1 truncate text-sm">{v.title}</span>
-            <span className="text-xs text-[var(--color-muted)]">{v.channelTitle}</span>
+            <span className="text-xs text-[var(--color-fg-muted)]">{v.channelTitle}</span>
             <Duration seconds={v.durationSeconds} />
             <StatusPill status={v.availabilityStatus} />
-            <span className="text-xs text-[var(--color-muted)]">
+            <span className="text-xs text-[var(--color-fg-muted)]">
               <RelativeTime iso={v.createdAt} />
             </span>
           </CardContent>

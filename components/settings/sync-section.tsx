@@ -73,7 +73,7 @@ export function SyncSection({ initial }: Props) {
     <section className="space-y-6">
       <div>
         <h2 className="text-base font-medium">Sync</h2>
-        <p className="text-sm text-[var(--color-muted)]">
+        <p className="text-sm text-[var(--color-fg-muted)]">
           Schedule automatic syncs and control concurrency.
         </p>
       </div>
@@ -111,12 +111,12 @@ export function SyncSection({ initial }: Props) {
             control={form.control}
             name="syncOnStartup"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-[var(--color-border)] px-4 py-3">
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-[var(--color-line)] px-4 py-3">
                 <div className="space-y-0.5">
                   <FormLabel className="text-sm font-medium">
                     Sync on startup
                   </FormLabel>
-                  <p className="text-xs text-[var(--color-muted)]">
+                  <p className="text-xs text-[var(--color-fg-muted)]">
                     Run a sync automatically when the app starts.
                   </p>
                 </div>
