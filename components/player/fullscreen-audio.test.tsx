@@ -32,6 +32,19 @@ describe("<FullscreenAudio>", () => {
     expect(screen.getByText("Chan")).toBeInTheDocument();
   });
 
+  it("renders nothing for video tracks (video overlay owns fullscreen)", () => {
+    const store = createPlayerStore();
+    store.getState().setQueue([{
+      videoId: 1, defaultKind: "video", title: "Clip", channelTitle: "Chan",
+      thumbnailUrl: null, durationSeconds: 200, availableKinds: ["video"],
+    }], 0);
+    store.getState().openFullscreen();
+    const { container } = render(
+      <PlayerStoreProvider store={store}><FullscreenAudio /></PlayerStoreProvider>,
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
   it("Close button returns to mini mode", async () => {
     const store = setup();
     render(<PlayerStoreProvider store={store}><FullscreenAudio /></PlayerStoreProvider>);

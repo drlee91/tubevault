@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { usePlayerStore, usePlayerStoreApi } from "@/lib/client/use-player-store";
 
@@ -27,6 +27,19 @@ export function PlayerCore({ resolveMediaFileId, cacheVersion = 0 }: Props) {
   const mode = usePlayerStore((s) => s.mode);
   const seekToken = usePlayerStore((s) => s.seekToken);
 
+  // play() that tolerates load interruptions: an AbortError only means the
+  // src changed mid-play (auto-advance, cache fetch landing) and a follow-up
+  // play() for the new source is on its way. Treating it as "playback failed"
+  // used to flip isPlaying off and silently stop the queue.
+  const safePlay = useCallback(
+    (el: HTMLMediaElement) => {
+      void el.play().catch((err: unknown) => {
+        if ((err as DOMException)?.name !== "AbortError") store.getState().pause();
+      });
+    },
+    [store],
+  );
+
   useEffect(() => {
     const item = currentIndex >= 0 ? queue[currentIndex] : null;
     if (!item || !currentKind) {
@@ -46,15 +59,25 @@ export function PlayerCore({ resolveMediaFileId, cacheVersion = 0 }: Props) {
     }
     const url = `/api/stream/${id}`;
     const el = currentKind === "audio" ? audioRef.current : videoRef.current;
-    if (el && el.getAttribute("src") !== url) el.setAttribute("src", url);
-  }, [currentIndex, currentKind, queue, resolveMediaFileId, store, cacheVersion]);
+    // A kind switch (audio↔video) leaves the previous element loaded and
+    // possibly playing; stop it so two sources never run on top of each other.
+    const inactive = currentKind === "audio" ? videoRef.current : audioRef.current;
+    if (inactive && !inactive.paused) inactive.pause();
+    if (el && el.getAttribute("src") !== url) {
+      el.setAttribute("src", url);
+      // The play effect doesn't depend on src/cacheVersion, so when only the
+      // src changed (auto-advance resolving after a cache fetch) nothing else
+      // restarts playback — and the load just aborted any pending play().
+      if (store.getState().isPlaying) safePlay(el);
+    }
+  }, [currentIndex, currentKind, queue, resolveMediaFileId, store, cacheVersion, safePlay]);
 
   useEffect(() => {
     const el = currentKind === "audio" ? audioRef.current : videoRef.current;
     if (!el) return;
-    if (isPlaying) void el.play().catch(() => store.getState().pause());
+    if (isPlaying) safePlay(el);
     else el.pause();
-  }, [isPlaying, currentKind, currentIndex, store]);
+  }, [isPlaying, currentKind, currentIndex, store, safePlay]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;

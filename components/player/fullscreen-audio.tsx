@@ -12,6 +12,7 @@ function fmt(s: number) {
 export function FullscreenAudio() {
   const store = usePlayerStoreApi();
   const open = usePlayerStore((s) => s.mode === "fullscreen");
+  const kind = usePlayerStore((s) => s.currentKind);
   const item = usePlayerStore((s) => (s.currentIndex >= 0 ? s.queue[s.currentIndex] : null));
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const position = usePlayerStore((s) => s.position);
@@ -25,7 +26,10 @@ export function FullscreenAudio() {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, store]);
 
-  if (!open || !item) return null;
+  // Video tracks get PlayerCore's video overlay + <FullscreenVideo> controls.
+  // Without the kind guard this pane (same z-index, later in the DOM) would
+  // paint over the video.
+  if (!open || !item || kind !== "audio") return null;
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col bg-[var(--color-bg)]">
