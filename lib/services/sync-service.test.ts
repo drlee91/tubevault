@@ -60,7 +60,7 @@ describe("SyncService", () => {
       expect(result.status).toBe("success");
       expect(result.stats.added).toBe(2);
       expect(ctx.itemRepo.activeExternalIdsByPlaylist(playlistId).sort()).toEqual(["v1", "v2"]);
-      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
+      expect(ctx.jobRepo.countByStatus().queued).toBe(4);
     } finally {
       ctx.sqlite.close();
     }
@@ -78,13 +78,13 @@ describe("SyncService", () => {
       ctx.registry.register(adapter);
       const svc = new SyncService(ctx);
       await svc.sync(playlistId, "manual");
-      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
+      expect(ctx.jobRepo.countByStatus().queued).toBe(4);
 
       adapter.script.fetchPlaylist = pl([{ id: "v1", title: "T" }]);
       const second = await svc.sync(playlistId, "manual");
       expect(second.stats.removed).toBe(1);
       expect(ctx.itemRepo.activeExternalIdsByPlaylist(playlistId)).toEqual(["v1"]);
-      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
+      expect(ctx.jobRepo.countByStatus().queued).toBe(4);
     } finally {
       ctx.sqlite.close();
     }
@@ -104,7 +104,7 @@ describe("SyncService", () => {
       }));
       const svc = new SyncService(ctx);
       await svc.sync(playlistId, "manual");
-      expect(ctx.jobRepo.countByStatus().queued).toBe(1);
+      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
     } finally {
       ctx.sqlite.close();
     }

@@ -78,7 +78,10 @@ export class SyncService {
           this.d.itemRepo.upsertActive(playlistId, videoId, pos);
           if (item.inferredStatus !== "available") stats.unavailable++;
           if (added.includes(item.externalId) && item.inferredStatus === "available") {
-            enqueueQueue.push({ videoId, kind: playlist.defaultFormat });
+            // Dual-format policy: every item gets both an audio and a video file.
+            // playlist.defaultFormat is a playback preference only.
+            enqueueQueue.push({ videoId, kind: "audio" });
+            enqueueQueue.push({ videoId, kind: "video" });
           }
         }
         for (const externalId of removed) {
