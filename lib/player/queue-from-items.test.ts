@@ -11,6 +11,7 @@ function detailItem(over: Partial<PlaylistDetailItem> = {}): PlaylistDetailItem 
       durationSeconds: 60, thumbnailUrl: "u", availabilityStatus: "available", availabilityReason: null,
     },
     audioFile: null, videoFile: null, pendingJob: null,
+    pendingJobs: { audio: null, video: null },
     availableKinds: ["audio"],
     ...over,
   };

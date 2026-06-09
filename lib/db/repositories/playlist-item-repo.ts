@@ -4,6 +4,13 @@ import { playlistItems, videos } from "@/lib/db/schema";
 import type * as schema from "@/lib/db/schema";
 import { rawTimestampToIso, rawTimestampToIsoOrNull } from "./raw-timestamp";
 
+export interface PendingKindJob {
+  id: number;
+  status: string;
+  attempts: number;
+  lastError: string | null;
+}
+
 export interface PlaylistDetailItem {
   position: number;
   inPlaylist: boolean;
@@ -22,6 +29,8 @@ export interface PlaylistDetailItem {
   audioFile: { id: number; format: string; quality: string; fileSizeBytes: number; downloadedAt: string } | null;
   videoFile: { id: number; format: string; quality: string; fileSizeBytes: number; downloadedAt: string } | null;
   pendingJob: { id: number; type: string; status: string; attempts: number; lastError: string | null } | null;
+  /** Latest non-terminal download job per kind (queued/running/failed). */
+  pendingJobs: { audio: PendingKindJob | null; video: PendingKindJob | null };
   availableKinds: Array<"audio" | "video">;
 }
 
@@ -103,7 +112,9 @@ export class PlaylistItemRepo {
         ma.file_size_bytes AS audio_size, ma.downloaded_at AS audio_downloaded,
         mv.id AS video_file_id, mv.format AS video_format, mv.quality AS video_quality,
         mv.file_size_bytes AS video_size, mv.downloaded_at AS video_downloaded,
-        j.id AS job_id, j.type AS job_type, j.status AS job_status, j.attempts AS job_attempts, j.last_error AS job_last_error
+        j.id AS job_id, j.type AS job_type, j.status AS job_status, j.attempts AS job_attempts, j.last_error AS job_last_error,
+        ja.id AS ja_id, ja.status AS ja_status, ja.attempts AS ja_attempts, ja.last_error AS ja_last_error,
+        jv.id AS jv_id, jv.status AS jv_status, jv.attempts AS jv_attempts, jv.last_error AS jv_last_error
       FROM playlist_items pi
       JOIN videos v ON v.id = pi.video_id
       LEFT JOIN media_files ma ON ma.video_id = v.id AND ma.kind = 'audio'
@@ -111,6 +122,24 @@ export class PlaylistItemRepo {
       LEFT JOIN jobs j ON j.id = (
         SELECT j2.id FROM jobs j2
         WHERE json_extract(j2.payload, '$.videoId') = v.id
+          AND j2.status IN ('queued', 'running', 'failed')
+        ORDER BY j2.created_at DESC
+        LIMIT 1
+      )
+      LEFT JOIN jobs ja ON ja.id = (
+        SELECT j2.id FROM jobs j2
+        WHERE j2.type = 'download_video'
+          AND json_extract(j2.payload, '$.videoId') = v.id
+          AND json_extract(j2.payload, '$.kind') = 'audio'
+          AND j2.status IN ('queued', 'running', 'failed')
+        ORDER BY j2.created_at DESC
+        LIMIT 1
+      )
+      LEFT JOIN jobs jv ON jv.id = (
+        SELECT j2.id FROM jobs j2
+        WHERE j2.type = 'download_video'
+          AND json_extract(j2.payload, '$.videoId') = v.id
+          AND json_extract(j2.payload, '$.kind') = 'video'
           AND j2.status IN ('queued', 'running', 'failed')
         ORDER BY j2.created_at DESC
         LIMIT 1
@@ -161,6 +190,14 @@ export class PlaylistItemRepo {
             lastError: r["job_last_error"] as string | null,
           }
         : null,
+      pendingJobs: {
+        audio: r["ja_id"] != null
+          ? { id: Number(r["ja_id"]), status: r["ja_status"] as string, attempts: Number(r["ja_attempts"]), lastError: r["ja_last_error"] as string | null }
+          : null,
+        video: r["jv_id"] != null
+          ? { id: Number(r["jv_id"]), status: r["jv_status"] as string, attempts: Number(r["jv_attempts"]), lastError: r["jv_last_error"] as string | null }
+          : null,
+      },
       availableKinds: (() => {
         const kinds: Array<"audio" | "video"> = [];
         if (r["audio_id"] != null) kinds.push("audio");
