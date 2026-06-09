@@ -69,7 +69,11 @@ function coerceVideoQuality(q: string): "720p" | "1080p" | "1440p" | "2160p" | "
 }
 
 async function doBoot(): Promise<BootContext> {
-  const dbPath = process.env.TUBEVAULT_DB_PATH ?? "./data/tubevault.db";
+  // Use ||, not ??, so an empty TUBEVAULT_DB_PATH (common when copying from
+  // .env.example) falls back to the default. An empty string would otherwise
+  // make better-sqlite3 open an ephemeral temp DB per connection, so the
+  // migrated tables vanish before getDb() reopens.
+  const dbPath = process.env.TUBEVAULT_DB_PATH || "./data/tubevault.db";
   await runMigrations({ dbPath, migrationsFolder: "./drizzle/migrations" });
   const db = getDb(dbPath);
 
@@ -84,8 +88,8 @@ async function doBoot(): Promise<BootContext> {
   const jobRepo = new JobRepo(db);
 
   const selfCheckService = new SelfCheckService({
-    ytdlpPath: settingsService.getYtdlpPath() ?? process.env.TUBEVAULT_YTDLP_PATH ?? "yt-dlp",
-    ffmpegPath: settingsService.getFfmpegPath() ?? process.env.TUBEVAULT_FFMPEG_PATH ?? "ffmpeg",
+    ytdlpPath: settingsService.getYtdlpPath() || process.env.TUBEVAULT_YTDLP_PATH || "yt-dlp",
+    ffmpegPath: settingsService.getFfmpegPath() || process.env.TUBEVAULT_FFMPEG_PATH || "ffmpeg",
     audioStoragePath: settingsService.getAudioStoragePath(),
     videoStoragePath: settingsService.getVideoStoragePath(),
     dbPath,
@@ -94,7 +98,7 @@ async function doBoot(): Promise<BootContext> {
   const registry = new ProviderRegistry();
   registry.register(
     new YouTubeAdapter({
-      binary: settingsService.getYtdlpPath() ?? process.env.TUBEVAULT_YTDLP_PATH ?? "yt-dlp",
+      binary: settingsService.getYtdlpPath() || process.env.TUBEVAULT_YTDLP_PATH || "yt-dlp",
     }),
   );
 

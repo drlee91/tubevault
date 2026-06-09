@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,7 +13,11 @@ import {
 
 export function GeneralSection() {
   const { theme, setTheme } = useTheme();
-  const value = theme ?? "system";
+  // next-themes resolves the persisted theme only on the client. Render a
+  // placeholder until mounted so SSR and first client render agree.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const value = mounted ? (theme ?? "system") : "system";
   return (
     <section className="space-y-4">
       <div>
