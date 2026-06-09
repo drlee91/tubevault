@@ -3,6 +3,7 @@ import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { playlists } from "@/lib/db/schema";
 import type * as schema from "@/lib/db/schema";
 import type { ProviderId } from "@/lib/providers/types";
+import { rawTimestampToIso, rawTimestampToIsoOrNull } from "./raw-timestamp";
 
 export interface PlaylistStatsRow {
   id: number;
@@ -100,8 +101,8 @@ export class PlaylistRepo {
       url: row["url"] as string,
       defaultFormat: row["default_format"] as "audio" | "video",
       syncEnabled: Boolean(row["sync_enabled"]),
-      lastSyncedAt: row["last_synced_at"] != null ? String(row["last_synced_at"]) : null,
-      createdAt: String(row["created_at"]),
+      lastSyncedAt: rawTimestampToIsoOrNull(row["last_synced_at"]),
+      createdAt: rawTimestampToIso(row["created_at"]),
       stats: {
         totalItems: Number(row["total_items"]),
         availableItems: Number(row["available_items"]),

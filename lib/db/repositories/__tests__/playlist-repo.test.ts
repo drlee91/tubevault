@@ -73,4 +73,23 @@ describe("PlaylistRepo", () => {
       sqlite.close();
     }
   });
+
+  // Raw-SQL stats queries bypass drizzle's timestamp mapping; the mapper must
+  // convert Unix seconds to ISO or <RelativeTime> renders "NaNy ago".
+  it("stats rows expose parseable ISO timestamps, not raw Unix seconds", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const repo = new PlaylistRepo(db);
+      const id = repo.create({ provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio" });
+      repo.touchLastSyncedAt(id);
+
+      for (const row of [repo.byIdWithStats(id)!, repo.listWithStats()[0]!]) {
+        expect(Number.isNaN(new Date(row.createdAt).getTime())).toBe(false);
+        expect(row.lastSyncedAt).not.toBeNull();
+        expect(Number.isNaN(new Date(row.lastSyncedAt!).getTime())).toBe(false);
+      }
+    } finally {
+      sqlite.close();
+    }
+  });
 });

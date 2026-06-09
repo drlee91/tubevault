@@ -2,6 +2,7 @@ import { eq, and, sql } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { playlistItems, videos } from "@/lib/db/schema";
 import type * as schema from "@/lib/db/schema";
+import { rawTimestampToIso, rawTimestampToIsoOrNull } from "./raw-timestamp";
 
 export interface PlaylistDetailItem {
   position: number;
@@ -121,8 +122,8 @@ export class PlaylistItemRepo {
     return rows.map((r): PlaylistDetailItem => ({
       position: r["position"] as number,
       inPlaylist: Boolean(r["in_playlist"]),
-      addedAt: String(r["added_at"]),
-      removedFromPlaylistAt: r["removed_from_playlist_at"] != null ? String(r["removed_from_playlist_at"]) : null,
+      addedAt: rawTimestampToIso(r["added_at"]),
+      removedFromPlaylistAt: rawTimestampToIsoOrNull(r["removed_from_playlist_at"]),
       video: {
         id: r["v_id"] as number,
         externalId: r["external_id"] as string,
@@ -139,7 +140,7 @@ export class PlaylistItemRepo {
             format: r["audio_format"] as string,
             quality: r["audio_quality"] as string,
             fileSizeBytes: Number(r["audio_size"]),
-            downloadedAt: String(r["audio_downloaded"]),
+            downloadedAt: rawTimestampToIso(r["audio_downloaded"]),
           }
         : null,
       videoFile: r["video_file_id"] != null
@@ -148,7 +149,7 @@ export class PlaylistItemRepo {
             format: r["video_format"] as string,
             quality: r["video_quality"] as string,
             fileSizeBytes: Number(r["video_size"]),
-            downloadedAt: String(r["video_downloaded"]),
+            downloadedAt: rawTimestampToIso(r["video_downloaded"]),
           }
         : null,
       pendingJob: r["job_id"] != null

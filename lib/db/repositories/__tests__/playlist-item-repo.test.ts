@@ -90,4 +90,33 @@ describe("PlaylistItemRepo", () => {
       sqlite.close();
     }
   });
+
+  // Same raw-query caveat as PlaylistRepo stats: added_at / downloaded_at come
+  // back as Unix seconds and must be mapped to ISO for <RelativeTime>.
+  it("listWithJoinsForDetail returns parseable ISO timestamps", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const playlistRepo = new PlaylistRepo(db);
+      const videoRepo = new VideoRepo(db);
+      const itemRepo = new PlaylistItemRepo(db);
+      const mediaRepo = new MediaFileRepo(db);
+      const pid = playlistRepo.create({
+        provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio", title: "p",
+      });
+      const vid = videoRepo.upsert({
+        provider: "youtube", externalId: "v", title: "T", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      itemRepo.upsertActive(pid, vid, 0);
+      mediaRepo.insert({
+        videoId: vid, kind: "audio", filePath: "/p/a.mp3",
+        format: "mp3", quality: "192", fileSizeBytes: 1, durationSeconds: 1,
+      });
+      const item = itemRepo.listWithJoinsForDetail(pid)[0]!;
+      expect(Number.isNaN(new Date(item.addedAt).getTime())).toBe(false);
+      expect(Number.isNaN(new Date(item.audioFile!.downloadedAt).getTime())).toBe(false);
+    } finally {
+      sqlite.close();
+    }
+  });
 });
