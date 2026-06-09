@@ -4,6 +4,7 @@ import type { VideoRepo } from "@/lib/db/repositories/video-repo";
 import type { MediaFileRepo, MediaFileRow } from "@/lib/db/repositories/media-file-repo";
 import type { ProviderRegistry } from "@/lib/providers/registry";
 import type { ProviderId } from "@/lib/providers/types";
+import { MediaUnavailableError } from "@/lib/providers/types";
 import { sanitizeFilename } from "@/lib/utils/sanitize-filename";
 
 export interface DownloadServiceSettings {
@@ -42,15 +43,23 @@ export class DownloadService {
     const stem = sanitizeFilename(`${video.title}-${video.externalId}`);
 
     await fs.mkdir(base, { recursive: true });
-    const result = await adapter.download(video.externalId, {
-      kind,
-      audioFormat: settings.defaultAudioFormat,
-      audioBitrate: settings.defaultAudioBitrate,
-      videoQuality: settings.defaultVideoQuality,
-      videoContainer: "mp4",
-      outputDir: base,
-      filenameStem: stem,
-    });
+    let result;
+    try {
+      result = await adapter.download(video.externalId, {
+        kind,
+        audioFormat: settings.defaultAudioFormat,
+        audioBitrate: settings.defaultAudioBitrate,
+        videoQuality: settings.defaultVideoQuality,
+        videoContainer: "mp4",
+        outputDir: base,
+        filenameStem: stem,
+      });
+    } catch (e) {
+      if (e instanceof MediaUnavailableError) {
+        throw new VideoBecameUnavailableError(videoId, e.reason);
+      }
+      throw e;
+    }
 
     const existing = this.d.mediaRepo.find(videoId, kind);
     if (existing) {

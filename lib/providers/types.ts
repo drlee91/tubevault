@@ -2,6 +2,22 @@ import type { AvailabilityStatus } from "@/lib/db/schema";
 
 export type ProviderId = "youtube";
 
+/**
+ * Thrown by a provider adapter's `download()` when the remote resource is
+ * definitively gone (deleted, private, terminated account, etc.).
+ * The DownloadService maps this to VideoBecameUnavailableError so the job
+ * handler can mark the video removed without retrying.
+ */
+export class MediaUnavailableError extends Error {
+  constructor(
+    public readonly externalId: string,
+    public readonly reason: string,
+  ) {
+    super(`media ${externalId} unavailable: ${reason}`);
+    this.name = "MediaUnavailableError";
+  }
+}
+
 export { AVAILABILITY_STATUSES } from "@/lib/db/schema";
 export type { AvailabilityStatus } from "@/lib/db/schema";
 
