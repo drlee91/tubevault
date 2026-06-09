@@ -36,12 +36,16 @@ describe("VideoService", () => {
         },
       }));
       const svc = new VideoService(ctx);
-      const { video, downloadJobId } = await svc.addStandalone({
+      const { video, downloadJobIds } = await svc.addStandalone({
         url: "https://youtu.be/vid1",
-        format: "audio",
       });
       expect(video.externalId).toBe("vid1");
-      expect(ctx.jobRepo.byId(downloadJobId)?.type).toBe("download_video");
+      expect(downloadJobIds).toHaveLength(2);
+      const kinds = downloadJobIds
+        .map((id) => ctx.jobRepo.byId(id))
+        .map((j) => (j!.payload as { kind: string }).kind)
+        .sort();
+      expect(kinds).toEqual(["audio", "video"]);
     } finally {
       ctx.sqlite.close();
     }
@@ -54,7 +58,6 @@ describe("VideoService", () => {
       const svc = new VideoService(ctx);
       await expect(svc.addStandalone({
         url: "https://www.youtube.com/playlist?list=PL",
-        format: "audio",
       })).rejects.toBeInstanceOf(UrlNotVideoError);
     } finally {
       ctx.sqlite.close();
@@ -72,8 +75,8 @@ describe("VideoService", () => {
         },
       }));
       const svc = new VideoService(ctx);
-      await svc.addStandalone({ url: "https://youtu.be/vid1", format: "audio" });
-      await expect(svc.addStandalone({ url: "https://youtu.be/vid1", format: "audio" }))
+      await svc.addStandalone({ url: "https://youtu.be/vid1" });
+      await expect(svc.addStandalone({ url: "https://youtu.be/vid1" }))
         .rejects.toBeInstanceOf(VideoAlreadyTrackedError);
     } finally {
       ctx.sqlite.close();

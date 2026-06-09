@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 describe("AddVideoDialog", () => {
   it("submits and closes on success", async () => {
     const spy = vi.spyOn(actions, "addVideoAction").mockResolvedValue({
-      ok: true, data: { videoId: 9, downloadJobId: 2 },
+      ok: true, data: { videoId: 9, downloadJobIds: [2, 3] },
     });
     const onOpenChange = vi.fn();
     render(<AddVideoDialog open onOpenChange={onOpenChange} />);

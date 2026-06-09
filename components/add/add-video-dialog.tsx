@@ -15,7 +15,6 @@ import { useMediaQuery } from "@/lib/client/use-media-query";
 
 const schema = z.object({
   url: z.string().url(),
-  format: z.enum(["audio", "video"]),
 });
 type Values = z.infer<typeof schema>;
 
@@ -34,7 +33,7 @@ export function AddVideoDialog({ open, onOpenChange, onSwitchToPlaylist }: Props
   const [submitError, setSubmitError] = useState<{ code: string; message: string } | null>(null);
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { url: "", format: "audio" },
+    defaultValues: { url: "" },
   });
 
   async function onSubmit(values: Values) {
@@ -58,7 +57,7 @@ export function AddVideoDialog({ open, onOpenChange, onSwitchToPlaylist }: Props
         <DialogHeader>
           <DialogTitle>Add video</DialogTitle>
           <DialogDescription>
-            Paste a YouTube video URL and choose the format.
+            Paste a YouTube video URL to download audio and video.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -76,20 +75,6 @@ export function AddVideoDialog({ open, onOpenChange, onSwitchToPlaylist }: Props
                 </FormItem>
               )}
             />
-
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Format</legend>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="radio" value="audio" {...form.register("format")} />
-                  Audio
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="radio" value="video" {...form.register("format")} />
-                  Video
-                </label>
-              </div>
-            </fieldset>
 
             {submitError && (
               <div className="space-y-2">
