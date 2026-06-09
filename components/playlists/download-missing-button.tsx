@@ -17,7 +17,7 @@ export function DownloadMissingButton({
       if (!r.ok) {
         toast.error("Download failed", { description: r.error.message });
       } else if (r.data.queued === 0) {
-        toast.info("Nothing to download — every item already has a file");
+        toast.info("Nothing to queue — missing files are already downloading or complete");
       } else {
         toast.success(`${r.data.queued} downloads queued`);
       }

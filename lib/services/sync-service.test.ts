@@ -171,4 +171,30 @@ describe("downloadMissing", () => {
       ctx.sqlite.close();
     }
   });
+
+  it("re-queues a kind whose latest job failed", async () => {
+    const ctx = setup();
+    try {
+      const playlistId = ctx.playlistRepo.create({
+        provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio",
+      });
+      const videoId = seedVideo(ctx, playlistId, "v-failed", 0, "available");
+
+      // Enqueue both kinds, then claim + fail them so they reach status=failed.
+      const audioJobId = await ctx.queue.enqueue("download_video", { videoId, kind: "audio" }, { priority: 5 });
+      const videoJobId = await ctx.queue.enqueue("download_video", { videoId, kind: "video" }, { priority: 5 });
+      await ctx.queue.claim(); // claims audioJobId (FIFO)
+      await ctx.queue.claim(); // claims videoJobId
+      await ctx.queue.fail(audioJobId, "network error", false);
+      await ctx.queue.fail(videoJobId, "network error", false);
+      expect(ctx.jobRepo.countByStatus().failed).toBe(2);
+
+      const svc = new SyncService(ctx);
+      const result = await svc.downloadMissing(playlistId);
+      expect(result.queued).toBe(2);
+      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
+    } finally {
+      ctx.sqlite.close();
+    }
+  });
 });
