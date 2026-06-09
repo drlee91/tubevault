@@ -108,4 +108,40 @@ describe("DownloadService", () => {
       sqlite.close();
     }
   });
+
+  // Regression: a retry resolves to the same templated path as the existing
+  // row, and the old-file cleanup used to unlink the file yt-dlp just wrote.
+  it("re-download onto the same path keeps the fresh file", async () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const videoRepo = new VideoRepo(db);
+      const mediaRepo = new MediaFileRepo(db);
+      const registry = new ProviderRegistry();
+      const dir = await tmpdir();
+      const finalPath = path.join(dir, "track.mp3");
+      await fs.writeFile(finalPath, Buffer.alloc(42));
+      registry.register(new FakeAdapter({
+        downloadResult: () => ({ filePath: finalPath, format: "mp3", quality: "192kbps", fileSizeBytes: 42, durationSeconds: 1 }),
+      }));
+      const videoId = videoRepo.upsert({
+        provider: "youtube", externalId: "x", title: "t",
+        channelTitle: null, durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      // Existing row points at the same location, spelled with a redundant
+      // "." segment (string-concatenated — path.join would normalize it away)
+      // so plain string comparison would miss the match.
+      mediaRepo.insert({
+        videoId, kind: "audio", filePath: dir + path.sep + "." + path.sep + "track.mp3",
+        format: "mp3", quality: "192kbps", fileSizeBytes: 41, durationSeconds: 1,
+      });
+      const svc = new DownloadService({ videoRepo, mediaRepo, registry, settings: () => settingsFor(dir, dir) });
+      await svc.download(videoId, "audio");
+      const rows = mediaRepo.byVideoId(videoId);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.filePath).toBe(finalPath);
+      await expect(fs.access(finalPath)).resolves.toBeUndefined();
+    } finally {
+      sqlite.close();
+    }
+  });
 });

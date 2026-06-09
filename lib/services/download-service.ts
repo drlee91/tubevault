@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+import path from "node:path";
 import type { VideoRepo } from "@/lib/db/repositories/video-repo";
 import type { MediaFileRepo, MediaFileRow } from "@/lib/db/repositories/media-file-repo";
 import type { ProviderRegistry } from "@/lib/providers/registry";
@@ -53,9 +54,16 @@ export class DownloadService {
 
     const existing = this.d.mediaRepo.find(videoId, kind);
     if (existing) {
-      await fs.unlink(existing.filePath).catch(() => {
-        /* best effort — old file may be gone or locked */
-      });
+      // Re-downloads resolve to the same templated path (outputDir + stem),
+      // so the "old" file IS the file yt-dlp just wrote — unlinking it here
+      // used to delete the fresh download right after a successful retry.
+      // Only remove the old file when it actually lives somewhere else
+      // (storage path or filename settings changed between downloads).
+      if (!isSameFile(existing.filePath, result.filePath)) {
+        await fs.unlink(existing.filePath).catch(() => {
+          /* best effort — old file may be gone or locked */
+        });
+      }
       this.d.mediaRepo.delete(existing.id);
     }
     this.d.mediaRepo.insert({
@@ -74,4 +82,13 @@ export class DownloadService {
     if (s.useSingleStoragePath) return s.audioStoragePath;
     return kind === "audio" ? s.audioStoragePath : s.videoStoragePath;
   }
+}
+
+function isSameFile(a: string, b: string): boolean {
+  const ra = path.resolve(a);
+  const rb = path.resolve(b);
+  if (ra === rb) return true;
+  // Windows paths are case-insensitive; relative vs. absolute spellings of
+  // the same location must compare equal too (resolve handles separators).
+  return process.platform === "win32" && ra.toLowerCase() === rb.toLowerCase();
 }
