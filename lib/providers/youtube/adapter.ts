@@ -104,6 +104,37 @@ export class YouTubeAdapter implements MediaProviderAdapter {
     const url = `https://www.youtube.com/watch?v=${externalId}`;
     const stem = opts.filenameStem;
     const outPath = `${opts.outputDir}/${stem}.%(ext)s`;
+    // FINAL_PATH sentinel + after_move:filepath gives us the post-merge,
+    // post-rename, fully-resolved file path on its own line. Parsing the
+    // unsuffixed `Destination:` lines instead would pick the intermediate
+    // `.f137.mp4` which yt-dlp deletes after merging.
+    const FINAL_TAG = "TUBEVAULT_FINAL_PATH:";
+    const baseArgs: string[] = [
+      "--encoding", "utf-8",
+      "--print", `after_move:${FINAL_TAG}%(filepath)s`,
+      "-o", outPath,
+      // Stale fragments from a prior crashed download (e.g. `.f137.mp4`,
+      // `.f251.webm.part`) make yt-dlp issue resume Range requests that the
+      // server rejects with HTTP 416. Force a clean re-download and overwrite
+      // any leftovers in the output directory.
+      "--no-continue",
+      "--force-overwrites",
+      // Windows Defender briefly holds a handle on freshly-written files,
+      // which made the `.part` → final rename fail with WinError 32. Writing
+      // directly to the final filename skips that rename. With --no-continue
+      // we restart from scratch each run, so losing the `.part` "in progress"
+      // marker is fine — the next run overwrites whatever's there.
+      "--no-part",
+      "--no-warnings",
+    ];
+    const heightCap = (opts.videoQuality ?? "1080p").replace(/p$/, "");
+    // Prefer AAC (m4a) audio when YouTube offers it: native MP4 container
+    // playback works in every consumer player, including Windows' built-in
+    // "Films & TV". Falls back to bestaudio (often Opus) which is fine in
+    // browser-based players but breaks Microsoft's MP4 codec set. No
+    // transcode — when AAC is unavailable, we accept the Opus fallback over
+    // burning CPU and re-encoding lossy audio.
+    const videoFormat = `bv*[height<=${heightCap}]+ba[ext=m4a]/bv*[height<=${heightCap}]+ba/b[height<=${heightCap}]`;
     const args: string[] =
       opts.kind === "audio"
         ? [
@@ -111,15 +142,13 @@ export class YouTubeAdapter implements MediaProviderAdapter {
             "-x",
             "--audio-format", opts.audioFormat ?? "mp3",
             "--audio-quality", `${opts.audioBitrate ?? 192}K`,
-            "-o", outPath,
-            "--no-warnings",
+            ...baseArgs,
             url,
           ]
         : [
-            "-f", `bestvideo[height<=${(opts.videoQuality ?? "1080p").replace(/p$/, "")}]+bestaudio/best`,
+            "-f", videoFormat,
             "--merge-output-format", opts.videoContainer ?? "mp4",
-            "-o", outPath,
-            "--no-warnings",
+            ...baseArgs,
             url,
           ];
 
@@ -129,12 +158,40 @@ export class YouTubeAdapter implements MediaProviderAdapter {
       timeoutMs: this.opts.timeoutMs ?? 5 * 60 * 1000,
     });
 
-    // yt-dlp prints destination paths via "[ffmpeg] Destination: …" or "[download] Destination: …"
-    const match = stdout.match(/Destination:\s*(.+)$/m);
-    const filePath = match?.[1]?.trim() ?? `${opts.outputDir}/${stem}.${opts.kind === "audio" ? opts.audioFormat ?? "mp3" : opts.videoContainer ?? "mp4"}`;
+    // Prefer the explicit FINAL_TAG line. Fall back to the LAST `Destination:`
+    // line (intermediate streams come first; the merged output is last) and
+    // finally to the templated path.
+    let filePath: string | null = null;
+    const tagMatch = stdout.match(new RegExp(`^${FINAL_TAG}(.+)$`, "m"));
+    if (tagMatch?.[1]) {
+      filePath = tagMatch[1].trim();
+    } else {
+      const allDest = [...stdout.matchAll(/Destination:\s*(.+)$/gm)];
+      const last = allDest.at(-1);
+      if (last?.[1]) filePath = last[1].trim();
+    }
+    if (!filePath) {
+      filePath = `${opts.outputDir}/${stem}.${opts.kind === "audio" ? opts.audioFormat ?? "mp3" : opts.videoContainer ?? "mp4"}`;
+    }
 
     const { promises: nodeFs } = await import("node:fs");
-    const stat = await nodeFs.stat(filePath);
+    // yt-dlp prints `after_move:filepath` slightly before ffmpeg's final
+    // rename is durable on disk, especially on Windows where Defender briefly
+    // holds locks on freshly-created files. Retry the stat for ~3s before
+    // giving up so transient races don't kill the job.
+    let stat = await statWithRetry(nodeFs, filePath, 6, 500);
+
+    // If yt-dlp's `temp.mp4 → final.mp4` rename failed (Defender lock again),
+    // the actual completed merge sits next to a stale or partial final file.
+    // Detect by size and promote the temp before cleanup.
+    const promoted = await promoteTempIfLarger(opts.outputDir, stem, filePath, stat.size);
+    if (promoted) stat = await statWithRetry(nodeFs, filePath, 4, 250);
+
+    // Best-effort cleanup of intermediate stream files and ffmpeg's merge
+    // temp file that yt-dlp couldn't delete itself.
+    await cleanupIntermediates(opts.outputDir, stem, filePath).catch(() => {
+      /* never fail the download for a cleanup hiccup */
+    });
 
     return {
       filePath,
@@ -168,4 +225,91 @@ export class YouTubeAdapter implements MediaProviderAdapter {
       return { status: "unknown", reason: stderr.trim() || null };
     }
   }
+}
+
+interface StatLike {
+  stat(path: string): Promise<{ size: number }>;
+}
+
+async function statWithRetry(
+  fs: StatLike,
+  filePath: string,
+  attempts: number,
+  delayMs: number,
+): Promise<{ size: number }> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fs.stat(filePath);
+    } catch (e) {
+      lastErr = e;
+      if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw lastErr;
+}
+
+async function promoteTempIfLarger(
+  outputDir: string,
+  stem: string,
+  finalPath: string,
+  finalSize: number,
+): Promise<boolean> {
+  const { promises: fs } = await import("node:fs");
+  const path = await import("node:path");
+  const ext = path.extname(finalPath);
+  const tempPath = path.join(outputDir, `${stem}.temp${ext}`);
+  let tempStat: { size: number };
+  try {
+    tempStat = await fs.stat(tempPath);
+  } catch {
+    return false;
+  }
+  if (tempStat.size <= finalSize) return false;
+  // Defender may still hold the temp file briefly. Retry the rename a few
+  // times so we don't lose the actually-complete merge to a transient lock.
+  for (let i = 0; i < 6; i++) {
+    try {
+      await fs.rm(finalPath, { force: true });
+      await fs.rename(tempPath, finalPath);
+      return true;
+    } catch {
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
+  return false;
+}
+
+async function cleanupIntermediates(
+  outputDir: string,
+  stem: string,
+  finalPath: string,
+): Promise<void> {
+  const { promises: fs } = await import("node:fs");
+  const path = await import("node:path");
+  const finalBase = path.basename(finalPath);
+  let entries: string[];
+  try {
+    entries = await fs.readdir(outputDir);
+  } catch {
+    return;
+  }
+  // Match yt-dlp/ffmpeg byproducts: format-id streams (.f136.mp4, .f251.webm),
+  // ffmpeg merge temp files (.temp.mp4), aborted .part files. Stem-anchored
+  // so we never touch unrelated files in a shared download directory.
+  const patterns = [
+    new RegExp(`^${escapeRegExp(stem)}\\.f\\d+\\.[a-z0-9]+$`, "i"),
+    new RegExp(`^${escapeRegExp(stem)}\\.temp\\.[a-z0-9]+$`, "i"),
+    new RegExp(`^${escapeRegExp(stem)}\\..*\\.part$`, "i"),
+  ];
+  await Promise.all(
+    entries
+      .filter((name) => name !== finalBase && patterns.some((rx) => rx.test(name)))
+      .map((name) => fs.unlink(path.join(outputDir, name)).catch(() => {})),
+  );
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
