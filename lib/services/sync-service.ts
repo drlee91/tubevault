@@ -113,4 +113,31 @@ export class SyncService {
     this.d.syncRunRepo.finishRun(syncRunId, { status, stats, errorLog });
     return { syncRunId, status, stats };
   }
+
+  /**
+   * Queue downloads for every playlist item that has no media file in the
+   * playlist's default format yet. Sync only auto-downloads items that are
+   * NEW since the previous run, so items whose downloads failed (or never
+   * ran) would otherwise stay undownloaded forever.
+   */
+  async downloadMissing(playlistId: number): Promise<{ queued: number }> {
+    const playlist = this.d.playlistRepo.byId(playlistId);
+    if (!playlist) throw new Error(`playlist ${playlistId} not found`);
+    const kind = playlist.defaultFormat;
+    const items = this.d.itemRepo.listWithJoinsForDetail(playlistId);
+    let queued = 0;
+    for (const item of items) {
+      if (!item.inPlaylist) continue;
+      const status = item.video.availabilityStatus;
+      if (status !== "available" && status !== "unknown") continue;
+      if (kind === "audio" ? item.audioFile : item.videoFile) continue;
+      const job = item.pendingJob;
+      if (job && job.type === "download_video" && (job.status === "queued" || job.status === "running")) {
+        continue; // already on its way
+      }
+      await this.d.queue.enqueue("download_video", { videoId: item.video.id, kind }, { priority: 5 });
+      queued++;
+    }
+    return { queued };
+  }
 }

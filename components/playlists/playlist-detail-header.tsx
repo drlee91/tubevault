@@ -2,6 +2,7 @@
 
 import { Play, Shuffle } from "lucide-react";
 import { SyncNowButton } from "./sync-now-button";
+import { DownloadMissingButton } from "./download-missing-button";
 import { DeletePlaylistButton } from "./delete-playlist-button";
 import { RelativeTime } from "@/components/shared/relative-time";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ export function PlaylistDetailHeader({ playlist, items, defaultFormat = "audio" 
           </>
         )}
         <SyncNowButton playlistId={playlist.id} disabled={playlist.activeSyncRunId !== null} />
+        <DownloadMissingButton playlistId={playlist.id} defaultFormat={playlist.defaultFormat} />
         <DeletePlaylistButton playlistId={playlist.id} />
       </div>
     </header>

@@ -174,6 +174,27 @@ describe("forceDownload", () => {
       ctx.cleanup();
     }
   });
+
+  // "unknown" = never checked. The download attempt is the check, so it must
+  // not require a manual "Refresh availability" round-trip first.
+  it("allows download when availability is unknown", async () => {
+    const ctx = await createTestBootContext();
+    try {
+      const id = ctx.videoRepo.upsert({
+        provider: "youtube",
+        externalId: "yt:unknown-1",
+        title: "Unknown Video",
+        channelTitle: null,
+        durationSeconds: null,
+        thumbnailUrl: null,
+        availabilityStatus: "unknown",
+      });
+      const { jobId } = await ctx.videoService.forceDownload(id, "video");
+      expect(ctx.jobRepo.byId(jobId)?.type).toBe("download_video");
+    } finally {
+      ctx.cleanup();
+    }
+  });
 });
 
 describe("enqueueRefresh", () => {

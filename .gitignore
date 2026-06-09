@@ -57,6 +57,7 @@ Thumbs.db
 /storage/
 /downloads/
 /Videos/
+/Audios/
 
 # Test fixtures cache
 tests/fixtures/yt-dlp/.cache/

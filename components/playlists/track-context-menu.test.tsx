@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+﻿import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as videoActions from "@/lib/actions/video-actions";
@@ -23,31 +23,47 @@ describe("TrackContextMenu", () => {
       <TrackContextMenu
         videoId={1}
         externalUrl="https://www.youtube.com/watch?v=abc"
-        available={true}
+        canDownload={true}
       />,
     );
 
     await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
 
     expect(await screen.findByRole("menuitem", { name: /open on youtube/i })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: /re-download as audio/i })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: /re-download as video/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /^download as audio/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /^download as video/i })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: /refresh availability/i })).toBeInTheDocument();
   });
 
-  it("disables Re-download items when not available", async () => {
+  it("labels kinds with a local file as Re-download", async () => {
     render(
       <TrackContextMenu
-        videoId={2}
-        externalUrl="https://www.youtube.com/watch?v=xyz"
-        available={false}
+        videoId={1}
+        externalUrl="https://www.youtube.com/watch?v=abc"
+        canDownload={true}
+        downloadedKinds={["audio"]}
       />,
     );
 
     await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
 
-    const audioItem = await screen.findByRole("menuitem", { name: /re-download as audio/i });
-    const videoItem = screen.getByRole("menuitem", { name: /re-download as video/i });
+    expect(await screen.findByRole("menuitem", { name: /re-download as audio/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /^download as video/i })).toBeInTheDocument();
+  });
+
+  it("disables download items when the video cannot be downloaded", async () => {
+    render(
+      <TrackContextMenu
+        videoId={2}
+        externalUrl="https://www.youtube.com/watch?v=xyz"
+        canDownload={false}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
+
+    const audioItem = await screen.findByRole("menuitem", { name: /download as audio/i });
+    const videoItem = screen.getByRole("menuitem", { name: /download as video/i });
 
     // base-ui sets data-disabled on disabled items
     expect(audioItem).toHaveAttribute("data-disabled");
@@ -64,7 +80,7 @@ describe("TrackContextMenu", () => {
       <TrackContextMenu
         videoId={3}
         externalUrl="https://www.youtube.com/watch?v=def"
-        available={true}
+        canDownload={true}
       />,
     );
 
@@ -87,7 +103,7 @@ it("Play Now replaces the queue", async () => {
   store.getState().setQueue([{ ...queueItem, videoId: 99 }], 0);
   render(
     <PlayerStoreProvider store={store}>
-      <TrackContextMenu videoId={1} externalUrl="https://x" available queueItem={queueItem} />
+      <TrackContextMenu videoId={1} externalUrl="https://x" canDownload queueItem={queueItem} />
     </PlayerStoreProvider>,
   );
   await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
@@ -100,7 +116,7 @@ it("Add to Queue appends", async () => {
   store.getState().setQueue([{ ...queueItem, videoId: 99 }], 0);
   render(
     <PlayerStoreProvider store={store}>
-      <TrackContextMenu videoId={1} externalUrl="https://x" available queueItem={queueItem} />
+      <TrackContextMenu videoId={1} externalUrl="https://x" canDownload queueItem={queueItem} />
     </PlayerStoreProvider>,
   );
   await userEvent.click(screen.getByRole("button", { name: /track actions/i }));
@@ -116,7 +132,7 @@ it("Play Next inserts after current", async () => {
   ], 0);
   render(
     <PlayerStoreProvider store={store}>
-      <TrackContextMenu videoId={1} externalUrl="https://x" available queueItem={queueItem} />
+      <TrackContextMenu videoId={1} externalUrl="https://x" canDownload queueItem={queueItem} />
     </PlayerStoreProvider>,
   );
   await userEvent.click(screen.getByRole("button", { name: /track actions/i }));

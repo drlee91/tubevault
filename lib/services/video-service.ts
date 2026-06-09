@@ -85,7 +85,12 @@ export class VideoService {
   async forceDownload(videoId: number, kind: "audio" | "video"): Promise<{ jobId: number }> {
     const video = this.d.videoRepo.byId(videoId);
     if (!video) throw new VideoNotFoundError(videoId);
-    if (video.availabilityStatus !== "available") throw new VideoNotAvailableError(videoId);
+    // "unknown" just means availability was never checked — the download
+    // attempt IS the check (the handler marks the video removed when yt-dlp
+    // reports it gone). Only refuse statuses known to be undownloadable.
+    if (video.availabilityStatus !== "available" && video.availabilityStatus !== "unknown") {
+      throw new VideoNotAvailableError(videoId);
+    }
     const jobId = await this.d.queue.enqueue("download_video", { videoId, kind }, { priority: 15 });
     return { jobId };
   }

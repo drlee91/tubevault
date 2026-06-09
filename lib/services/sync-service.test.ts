@@ -4,6 +4,7 @@ import { PlaylistRepo } from "@/lib/db/repositories/playlist-repo";
 import { VideoRepo } from "@/lib/db/repositories/video-repo";
 import { PlaylistItemRepo } from "@/lib/db/repositories/playlist-item-repo";
 import { SyncRunRepo } from "@/lib/db/repositories/sync-run-repo";
+import { MediaFileRepo } from "@/lib/db/repositories/media-file-repo";
 import { JobRepo } from "@/lib/db/repositories/job-repo";
 import { JobQueue } from "@/lib/jobs/queue";
 import { ProviderRegistry } from "@/lib/providers/registry";
@@ -119,6 +120,53 @@ describe("SyncService", () => {
       ctx.registry.register(new FakeAdapter({ fetchPlaylist: pl([]) }));
       const svc = new SyncService(ctx);
       await expect(svc.sync(playlistId, "manual")).rejects.toBeInstanceOf(PlaylistAlreadySyncingError);
+    } finally {
+      ctx.sqlite.close();
+    }
+  });
+});
+
+describe("downloadMissing", () => {
+  function seedVideo(
+    ctx: ReturnType<typeof setup>,
+    playlistId: number,
+    externalId: string,
+    position: number,
+    status: "available" | "unknown" | "removed",
+  ): number {
+    const id = ctx.videoRepo.upsert({
+      provider: "youtube", externalId, title: externalId, channelTitle: null,
+      durationSeconds: 1, thumbnailUrl: null, availabilityStatus: status,
+    });
+    ctx.itemRepo.upsertActive(playlistId, id, position);
+    return id;
+  }
+
+  it("queues default-format downloads only for items without a file, skipping undownloadable and already-queued", async () => {
+    const ctx = setup();
+    try {
+      const mediaRepo = new MediaFileRepo(ctx.db);
+      const playlistId = ctx.playlistRepo.create({
+        provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio",
+      });
+      seedVideo(ctx, playlistId, "v-available", 0, "available");
+      seedVideo(ctx, playlistId, "v-unknown", 1, "unknown");
+      const withFile = seedVideo(ctx, playlistId, "v-has-file", 2, "available");
+      seedVideo(ctx, playlistId, "v-removed", 3, "removed");
+      mediaRepo.insert({
+        videoId: withFile, kind: "audio", filePath: "/x/a.mp3",
+        format: "mp3", quality: "192", fileSizeBytes: 1, durationSeconds: 1,
+      });
+
+      const svc = new SyncService(ctx);
+      const first = await svc.downloadMissing(playlistId);
+      expect(first.queued).toBe(2); // available + unknown, not has-file/removed
+      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
+
+      // Second invocation must not duplicate the still-queued jobs.
+      const second = await svc.downloadMissing(playlistId);
+      expect(second.queued).toBe(0);
+      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
     } finally {
       ctx.sqlite.close();
     }

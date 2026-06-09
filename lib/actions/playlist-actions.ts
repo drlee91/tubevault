@@ -48,6 +48,21 @@ export async function syncPlaylistAction(
   }
 }
 
+export async function downloadMissingAction(
+  playlistId: number,
+): Promise<ActionResult<{ queued: number }>> {
+  try {
+    const ctx = await ensureBootedOrTest();
+    const playlist = ctx.playlistService.byId(playlistId);
+    if (!playlist) return fail("PLAYLIST_NOT_FOUND", "Playlist not found");
+    const { queued } = await ctx.syncService.downloadMissing(playlistId);
+    revalidatePath(`/playlists/${playlistId}`);
+    return ok({ queued });
+  } catch (err) {
+    return { ok: false, error: mapServiceError(err) };
+  }
+}
+
 export async function deletePlaylistAction(
   playlistId: number,
 ): Promise<ActionResult<{ deleted: true }>> {

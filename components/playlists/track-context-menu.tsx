@@ -19,11 +19,14 @@ import type { QueueItem } from "@/lib/player/types";
 interface Props {
   videoId: number;
   externalUrl: string;
-  available: boolean;
+  /** False only for statuses known to be undownloadable (removed, private, …). */
+  canDownload: boolean;
+  /** Kinds that already have a media file on disk — switches the menu label between Download and Re-download. */
+  downloadedKinds?: Array<"audio" | "video">;
   queueItem?: QueueItem;
 }
 
-export function TrackContextMenu({ videoId, externalUrl, available, queueItem }: Props) {
+export function TrackContextMenu({ videoId, externalUrl, canDownload, downloadedKinds = [], queueItem }: Props) {
   const [, start] = useTransition();
   const store = usePlayerStoreApiOptional();
 
@@ -31,12 +34,15 @@ export function TrackContextMenu({ videoId, externalUrl, available, queueItem }:
     start(async () => {
       const result = await downloadVideoAction(videoId, kind);
       if (result.ok) {
-        toast.success(`Re-download (${kind}) queued`);
+        toast.success(`Download (${kind}) queued`);
       } else {
         toast.error("Download failed", { description: result.error.message });
       }
     });
   }
+
+  const dlLabel = (kind: "audio" | "video") =>
+    `${downloadedKinds.includes(kind) ? "Re-download" : "Download"} as ${kind === "audio" ? "Audio" : "Video"}`;
 
   function refresh() {
     start(async () => {
@@ -90,11 +96,11 @@ export function TrackContextMenu({ videoId, externalUrl, available, queueItem }:
           <ExternalLink className="mr-2 h-4 w-4" /> Open on YouTube
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled={!available} onClick={() => dl("audio")}>
-          <Download className="mr-2 h-4 w-4" /> Re-download as Audio
+        <DropdownMenuItem disabled={!canDownload} onClick={() => dl("audio")}>
+          <Download className="mr-2 h-4 w-4" /> {dlLabel("audio")}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!available} onClick={() => dl("video")}>
-          <Download className="mr-2 h-4 w-4" /> Re-download as Video
+        <DropdownMenuItem disabled={!canDownload} onClick={() => dl("video")}>
+          <Download className="mr-2 h-4 w-4" /> {dlLabel("video")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={refresh}>
