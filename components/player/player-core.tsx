@@ -25,6 +25,7 @@ export function PlayerCore({ resolveMediaFileId, cacheVersion = 0 }: Props) {
   const volume = usePlayerStore((s) => s.volume);
   const queue = usePlayerStore((s) => s.queue);
   const mode = usePlayerStore((s) => s.mode);
+  const seekToken = usePlayerStore((s) => s.seekToken);
 
   useEffect(() => {
     const item = currentIndex >= 0 ? queue[currentIndex] : null;
@@ -60,6 +61,17 @@ export function PlayerCore({ resolveMediaFileId, cacheVersion = 0 }: Props) {
     if (videoRef.current) videoRef.current.volume = volume;
   }, [volume]);
 
+  // Apply user-initiated seeks to the active media element. Bumped seekToken
+  // signals the intent — `position` reads also bump on every timeupdate, so
+  // we react to the token, not the position, to avoid an echo loop.
+  useEffect(() => {
+    if (seekToken === 0) return;
+    const el = currentKind === "audio" ? audioRef.current : videoRef.current;
+    if (!el) return;
+    const target = store.getState().position;
+    if (Math.abs(el.currentTime - target) > 0.25) el.currentTime = target;
+  }, [seekToken, currentKind, store]);
+
   useEffect(() => {
     function bind(el: HTMLMediaElement | null) {
       if (!el) return () => {};
@@ -93,16 +105,29 @@ export function PlayerCore({ resolveMediaFileId, cacheVersion = 0 }: Props) {
     return () => { a(); v(); };
   }, [store]);
 
-  const showVideo = currentKind === "video" && (mode === "fullscreen" || mode === "queue-open");
+  const showVideo = currentKind === "video" && mode === "fullscreen";
   return (
     <>
       <audio ref={audioRef} preload="metadata" hidden />
-      <video
-        ref={videoRef}
-        preload="metadata"
-        playsInline
-        className={showVideo ? "h-full w-full" : "hidden"}
-      />
+      {/* Always-mounted video: parent toggles between hidden and a fixed
+          fullscreen overlay so playback continuity is preserved when the user
+          enters/leaves fullscreen. The element itself stays attached to the
+          same React node — toggling visibility, not remount. */}
+      <div
+        className={
+          showVideo
+            ? "fixed inset-0 z-30 grid place-items-center bg-black pb-16"
+            : "hidden"
+        }
+      >
+        <video
+          ref={videoRef}
+          preload="metadata"
+          playsInline
+          controls
+          className="max-h-full max-w-full"
+        />
+      </div>
     </>
   );
 }

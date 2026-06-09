@@ -16,6 +16,13 @@ export interface PlayerState {
   repeat: RepeatMode;
   mode: PlayerMode;
   hasHydrated: boolean;
+  /**
+   * Bumped on every user-initiated `seek()`. PlayerCore subscribes to this
+   * token and writes `position` into the media element's `currentTime` —
+   * timeupdate-driven `setPosition` calls don't touch it, so we don't get an
+   * echo loop between the UI and the element.
+   */
+  seekToken: number;
   _originalQueue: QueueItem[] | null;
 }
 
@@ -52,7 +59,7 @@ export interface PlayerActions {
 
 export type PlayerStore = StoreApi<PlayerState & PlayerActions>;
 
-const initial: PlayerState = {
+export const initialPlayerState: PlayerState = {
   queue: [],
   currentIndex: -1,
   resolvedMediaFileId: null,
@@ -66,12 +73,13 @@ const initial: PlayerState = {
   repeat: "off",
   mode: "mini",
   hasHydrated: false,
+  seekToken: 0,
   _originalQueue: null,
 };
 
 export function createPlayerStore(): PlayerStore {
   return createStore<PlayerState & PlayerActions>((set, get) => ({
-    ...initial,
+    ...initialPlayerState,
 
     setQueue(items, startIndex) {
       if (items.length === 0) {
@@ -158,7 +166,10 @@ export function createPlayerStore(): PlayerStore {
       get()._resolve();
     },
 
-    seek(seconds) { set({ position: Math.max(0, seconds) }); },
+    seek(seconds) {
+      const pos = Math.max(0, seconds);
+      set({ position: pos, seekToken: get().seekToken + 1 });
+    },
     setPosition(seconds) { set({ position: Math.max(0, seconds) }); },
     setDuration(seconds) { set({ duration: Math.max(0, seconds) }); },
     setVolume(v) {

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Maximize2 } from "lucide-react";
 import { usePlayerStore, usePlayerStoreApi } from "@/lib/client/use-player-store";
 
@@ -7,7 +7,6 @@ export function FullscreenVideo() {
   const store = usePlayerStoreApi();
   const open = usePlayerStore((s) => s.mode === "fullscreen");
   const kind = usePlayerStore((s) => s.currentKind);
-  const wrapRef = useRef<HTMLDivElement | null>(null);
   const [showControls, setShowControls] = useState(true);
 
   useEffect(() => {
@@ -25,20 +24,20 @@ export function FullscreenVideo() {
 
   if (!open || kind !== "video") return null;
 
+  // The actual <video> element is rendered by PlayerCore's fullscreen
+  // overlay (z-30). This component layers controls above it (z-40) without
+  // its own backdrop.
   function expandNative() {
-    const v = wrapRef.current?.querySelector("video");
+    const v = document.querySelector<HTMLVideoElement>("video[src]");
     if (v && v.requestFullscreen) void v.requestFullscreen();
   }
 
   return (
-    <div ref={wrapRef} className="fixed inset-0 z-30 grid place-items-center bg-black/95">
-      {/* Hidden video element used as target for native fullscreen */}
-      <video className="hidden" aria-hidden="true" />
-      <div className="absolute inset-0 grid place-items-center p-4" />
+    <div className="pointer-events-none fixed inset-0 z-40">
       {showControls && (
-        <div className="absolute right-4 top-4 flex gap-2">
-          <button aria-label="Expand" onClick={expandNative} className="rounded bg-white/10 p-2 text-white"><Maximize2 className="h-5 w-5" /></button>
-          <button aria-label="Close" onClick={() => store.getState().closeOverlays()} className="rounded bg-white/10 p-2 text-white"><X className="h-5 w-5" /></button>
+        <div className="pointer-events-auto absolute right-4 top-4 flex gap-2">
+          <button aria-label="Expand" onClick={expandNative} className="rounded bg-white/10 p-2 text-white hover:bg-white/20"><Maximize2 className="h-5 w-5" /></button>
+          <button aria-label="Close" onClick={() => store.getState().closeOverlays()} className="rounded bg-white/10 p-2 text-white hover:bg-white/20"><X className="h-5 w-5" /></button>
         </div>
       )}
     </div>

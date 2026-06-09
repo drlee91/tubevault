@@ -48,7 +48,15 @@ describe("<FullscreenVideo>", () => {
     const store = setup();
     const spy = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(HTMLVideoElement.prototype, "requestFullscreen", { value: spy, configurable: true });
-    render(<PlayerStoreProvider store={store}><FullscreenVideo /></PlayerStoreProvider>);
+    // FullscreenVideo no longer renders the <video> itself — PlayerCore does.
+    // Mount a sibling with src= so the document.querySelector("video[src]")
+    // lookup in expandNative() finds a real target.
+    render(
+      <PlayerStoreProvider store={store}>
+        <video src="blob:test" />
+        <FullscreenVideo />
+      </PlayerStoreProvider>,
+    );
     await userEvent.click(screen.getByRole("button", { name: /expand/i }));
     expect(spy).toHaveBeenCalled();
   });
