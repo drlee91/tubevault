@@ -56,6 +56,7 @@ Thumbs.db
 # Storage (user data — should never be committed)
 /storage/
 /downloads/
+/Videos/
 
 # Test fixtures cache
 tests/fixtures/yt-dlp/.cache/
