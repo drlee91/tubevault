@@ -6,7 +6,7 @@ import { rawTimestampToIso, rawTimestampToIsoOrNull } from "./raw-timestamp";
 
 export interface PendingKindJob {
   id: number;
-  status: string;
+  status: "queued" | "running" | "failed";
   attempts: number;
   lastError: string | null;
 }
@@ -192,10 +192,10 @@ export class PlaylistItemRepo {
         : null,
       pendingJobs: {
         audio: r["ja_id"] != null
-          ? { id: Number(r["ja_id"]), status: r["ja_status"] as string, attempts: Number(r["ja_attempts"]), lastError: r["ja_last_error"] as string | null }
+          ? { id: Number(r["ja_id"]), status: r["ja_status"] as "queued" | "running" | "failed", attempts: Number(r["ja_attempts"]), lastError: r["ja_last_error"] as string | null }
           : null,
         video: r["jv_id"] != null
-          ? { id: Number(r["jv_id"]), status: r["jv_status"] as string, attempts: Number(r["jv_attempts"]), lastError: r["jv_last_error"] as string | null }
+          ? { id: Number(r["jv_id"]), status: r["jv_status"] as "queued" | "running" | "failed", attempts: Number(r["jv_attempts"]), lastError: r["jv_last_error"] as string | null }
           : null,
       },
       availableKinds: (() => {

@@ -142,31 +142,31 @@ describe("downloadMissing", () => {
     return id;
   }
 
-  it("queues default-format downloads only for items without a file, skipping undownloadable and already-queued", async () => {
+  it("queues each missing kind per item, skipping undownloadable and already-pending kinds", async () => {
     const ctx = setup();
     try {
       const mediaRepo = new MediaFileRepo(ctx.db);
       const playlistId = ctx.playlistRepo.create({
         provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio",
       });
-      seedVideo(ctx, playlistId, "v-available", 0, "available");
-      seedVideo(ctx, playlistId, "v-unknown", 1, "unknown");
-      const withFile = seedVideo(ctx, playlistId, "v-has-file", 2, "available");
-      seedVideo(ctx, playlistId, "v-removed", 3, "removed");
+      seedVideo(ctx, playlistId, "v-nothing", 0, "available");      // → audio + video
+      seedVideo(ctx, playlistId, "v-unknown", 1, "unknown");        // → audio + video
+      const withAudio = seedVideo(ctx, playlistId, "v-has-audio", 2, "available"); // → video only
+      seedVideo(ctx, playlistId, "v-removed", 3, "removed");        // → nothing
       mediaRepo.insert({
-        videoId: withFile, kind: "audio", filePath: "/x/a.mp3",
+        videoId: withAudio, kind: "audio", filePath: "/x/a.mp3",
         format: "mp3", quality: "192", fileSizeBytes: 1, durationSeconds: 1,
       });
 
       const svc = new SyncService(ctx);
       const first = await svc.downloadMissing(playlistId);
-      expect(first.queued).toBe(2); // available + unknown, not has-file/removed
-      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
+      expect(first.queued).toBe(5); // 2 + 2 + 1
+      expect(ctx.jobRepo.countByStatus().queued).toBe(5);
 
-      // Second invocation must not duplicate the still-queued jobs.
+      // Re-invoking must not duplicate still-queued kinds.
       const second = await svc.downloadMissing(playlistId);
       expect(second.queued).toBe(0);
-      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
+      expect(ctx.jobRepo.countByStatus().queued).toBe(5);
     } finally {
       ctx.sqlite.close();
     }

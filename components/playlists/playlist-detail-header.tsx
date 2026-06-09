@@ -54,7 +54,7 @@ export function PlaylistDetailHeader({ playlist, items, defaultFormat = "audio" 
           </>
         )}
         <SyncNowButton playlistId={playlist.id} disabled={playlist.activeSyncRunId !== null} />
-        <DownloadMissingButton playlistId={playlist.id} defaultFormat={playlist.defaultFormat} />
+        <DownloadMissingButton playlistId={playlist.id} />
         <DeletePlaylistButton playlistId={playlist.id} />
       </div>
     </header>
