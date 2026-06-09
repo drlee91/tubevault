@@ -153,12 +153,16 @@ export class YouTubeAdapter implements MediaProviderAdapter {
             url,
           ];
 
+    const baseTimeout = this.opts.timeoutMs ?? 5 * 60 * 1000;
+    // Long media takes long: allow 250ms per media-second on top of the base.
+    const timeoutMs = baseTimeout + (opts.durationSeconds ?? 0) * 250;
+
     let stdout: string;
     try {
       stdout = await runYtDlp(args, {
         binary: this.opts.binary,
         execFile: this.opts.execFile,
-        timeoutMs: this.opts.timeoutMs ?? 5 * 60 * 1000,
+        timeoutMs,
       });
     } catch (e) {
       if (e instanceof YtDlpError) {

@@ -133,6 +133,51 @@ describe("YouTubeAdapter.download — unavailability detection", () => {
   });
 });
 
+describe("YouTubeAdapter.download — timeout scaling", () => {
+  it("uses base timeout (5 min) when durationSeconds is omitted", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "tubevault-"));
+    const audioPath = path.join(tmp, "track.mp3");
+    await fs.writeFile(audioPath, Buffer.alloc(1024));
+
+    let capturedTimeout: number | undefined;
+    const exec: ExecFileLike = (_f, _a, opts, cb) => {
+      capturedTimeout = opts.timeout;
+      cb(null, "[ffmpeg] Destination: " + audioPath + "\n", "");
+    };
+    const a = new YouTubeAdapter({ binary: "yt-dlp", execFile: exec });
+    await a.download("abc111", {
+      kind: "audio",
+      audioFormat: "mp3",
+      audioBitrate: 192,
+      outputDir: tmp,
+      filenameStem: "track",
+    });
+    expect(capturedTimeout).toBe(5 * 60 * 1000);
+  });
+
+  it("adds 250ms per media-second to base timeout for long videos", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "tubevault-"));
+    const audioPath = path.join(tmp, "track.mp3");
+    await fs.writeFile(audioPath, Buffer.alloc(1024));
+
+    let capturedTimeout: number | undefined;
+    const exec: ExecFileLike = (_f, _a, opts, cb) => {
+      capturedTimeout = opts.timeout;
+      cb(null, "[ffmpeg] Destination: " + audioPath + "\n", "");
+    };
+    const a = new YouTubeAdapter({ binary: "yt-dlp", execFile: exec });
+    await a.download("abc111", {
+      kind: "audio",
+      audioFormat: "mp3",
+      audioBitrate: 192,
+      outputDir: tmp,
+      filenameStem: "track",
+      durationSeconds: 36171,
+    });
+    expect(capturedTimeout).toBe(5 * 60 * 1000 + 36171 * 250);
+  });
+});
+
 describe("YouTubeAdapter.download", () => {
   it("invokes yt-dlp with audio extraction args and returns file metadata", async () => {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "tubevault-"));

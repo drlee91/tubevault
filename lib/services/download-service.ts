@@ -53,6 +53,7 @@ export class DownloadService {
         videoContainer: "mp4",
         outputDir: base,
         filenameStem: stem,
+        durationSeconds: video.durationSeconds,
       });
     } catch (e) {
       if (e instanceof MediaUnavailableError) {

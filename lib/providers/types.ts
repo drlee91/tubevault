@@ -53,6 +53,7 @@ export interface DownloadOpts {
   videoContainer?: "mp4" | "webm" | "mkv";
   outputDir: string;
   filenameStem: string;
+  durationSeconds?: number | null;
 }
 
 export interface DownloadResult {
