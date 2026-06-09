@@ -124,9 +124,10 @@ export class PlaylistRepo {
         (SELECT COUNT(*) FROM playlist_items pi
            JOIN videos v ON v.id = pi.video_id
            WHERE pi.playlist_id = p.id AND pi.in_playlist = 1 AND v.availability_status != 'available') AS unavailable_items,
-        (SELECT COUNT(DISTINCT mf.video_id) FROM media_files mf
-           JOIN playlist_items pi ON pi.video_id = mf.video_id
-           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1) AS downloaded_items,
+        (SELECT COUNT(*) FROM playlist_items pi
+           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1
+             AND EXISTS (SELECT 1 FROM media_files ma WHERE ma.video_id = pi.video_id AND ma.kind = 'audio')
+             AND EXISTS (SELECT 1 FROM media_files mv WHERE mv.video_id = pi.video_id AND mv.kind = 'video')) AS downloaded_items,
         (SELECT id FROM sync_runs sr WHERE sr.playlist_id = p.id AND sr.status = 'running' LIMIT 1) AS active_sync_run_id
       FROM playlists p
       ORDER BY p.created_at DESC
@@ -145,9 +146,10 @@ export class PlaylistRepo {
         (SELECT COUNT(*) FROM playlist_items pi
            JOIN videos v ON v.id = pi.video_id
            WHERE pi.playlist_id = p.id AND pi.in_playlist = 1 AND v.availability_status != 'available') AS unavailable_items,
-        (SELECT COUNT(DISTINCT mf.video_id) FROM media_files mf
-           JOIN playlist_items pi ON pi.video_id = mf.video_id
-           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1) AS downloaded_items,
+        (SELECT COUNT(*) FROM playlist_items pi
+           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1
+             AND EXISTS (SELECT 1 FROM media_files ma WHERE ma.video_id = pi.video_id AND ma.kind = 'audio')
+             AND EXISTS (SELECT 1 FROM media_files mv WHERE mv.video_id = pi.video_id AND mv.kind = 'video')) AS downloaded_items,
         (SELECT id FROM sync_runs sr WHERE sr.playlist_id = p.id AND sr.status = 'running' LIMIT 1) AS active_sync_run_id
       FROM playlists p
       WHERE p.id = ${id}

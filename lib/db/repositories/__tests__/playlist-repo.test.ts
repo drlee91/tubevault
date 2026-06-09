@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { createTestDb } from "@/lib/db/__tests__/test-db";
 import { PlaylistRepo } from "../playlist-repo";
+import { VideoRepo } from "../video-repo";
+import { PlaylistItemRepo } from "../playlist-item-repo";
+import { MediaFileRepo } from "../media-file-repo";
 
 describe("PlaylistRepo", () => {
   it("inserts and reads back a playlist", () => {
@@ -69,6 +72,36 @@ describe("PlaylistRepo", () => {
       repo.create({ provider: "youtube", externalId: "PL1", url: "u1", defaultFormat: "audio" });
       repo.create({ provider: "youtube", externalId: "PL2", url: "u2", defaultFormat: "video" });
       expect(repo.list()).toHaveLength(2);
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it("downloadedItems counts only items with BOTH audio and video files", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const repo = new PlaylistRepo(db);
+      const videoRepo = new VideoRepo(db);
+      const itemRepo = new PlaylistItemRepo(db);
+      const mediaRepo = new MediaFileRepo(db);
+      const id = repo.create({ provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio" });
+      const complete = videoRepo.upsert({
+        provider: "youtube", externalId: "v-complete", title: "c", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      const half = videoRepo.upsert({
+        provider: "youtube", externalId: "v-half", title: "h", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      itemRepo.upsertActive(id, complete, 0);
+      itemRepo.upsertActive(id, half, 1);
+      for (const kind of ["audio", "video"] as const) {
+        mediaRepo.insert({ videoId: complete, kind, filePath: `/x/c.${kind}`, format: kind === "audio" ? "mp3" : "mp4", quality: "q", fileSizeBytes: 1, durationSeconds: 1 });
+      }
+      mediaRepo.insert({ videoId: half, kind: "audio", filePath: "/x/h.mp3", format: "mp3", quality: "q", fileSizeBytes: 1, durationSeconds: 1 });
+
+      expect(repo.byIdWithStats(id)!.stats.downloadedItems).toBe(1);
+      expect(repo.listWithStats()[0]!.stats.downloadedItems).toBe(1);
     } finally {
       sqlite.close();
     }

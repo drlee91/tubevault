@@ -136,7 +136,8 @@ describe("listWithStats", () => {
       ctx.itemRepo.upsertActive(playlistId, v1, 0);
       ctx.itemRepo.upsertActive(playlistId, v2, 1);
 
-      // Seed one media_file (audio) for v1 only — so downloadedItems = 1
+      // Seed both audio + video for v1 only — so downloadedItems = 1 (both-kind policy).
+      // v2 has no files and must not count.
       ctx.mediaFileRepo.insert({
         videoId: v1,
         kind: "audio",
@@ -144,6 +145,15 @@ describe("listWithStats", () => {
         format: "mp3",
         quality: "192",
         fileSizeBytes: 1024,
+        durationSeconds: 120,
+      });
+      ctx.mediaFileRepo.insert({
+        videoId: v1,
+        kind: "video",
+        filePath: "/tmp/v1.mp4",
+        format: "mp4",
+        quality: "720p",
+        fileSizeBytes: 2048,
         durationSeconds: 120,
       });
 
