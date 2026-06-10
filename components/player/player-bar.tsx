@@ -109,8 +109,9 @@ export function PlayerBar() {
             </button>
           </div>
 
-          {/* Seek row */}
-          <div className="flex w-full max-w-[480px] items-center gap-2">
+          {/* Seek row — fixed width because the parent grid column is `auto`
+              and would otherwise collapse to the time labels' width. */}
+          <div className="flex w-[clamp(240px,36vw,480px)] items-center gap-2">
             <span className="font-mono text-[11px] tabular-nums text-[var(--color-fg-muted)]">
               {formatTime(position)}
             </span>
