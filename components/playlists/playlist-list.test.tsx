@@ -22,6 +22,7 @@ function makeP(id: number, title: string): PlaylistStatsRow {
       downloadedItems: 1,
     },
     activeSyncRunId: null,
+    coverThumbs: [],
   };
 }
 

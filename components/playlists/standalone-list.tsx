@@ -4,10 +4,8 @@ import {
   useStandaloneVideos,
   type VideoSerialized,
 } from "@/lib/client/use-standalone-videos";
-import { Card, CardContent } from "@/components/ui/card";
-import { StatusPill } from "@/components/shared/status-pill";
+import { Play } from "lucide-react";
 import { Duration } from "@/components/shared/duration";
-import { RelativeTime } from "@/components/shared/relative-time";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorCard } from "@/components/shared/error-card";
 import { SkeletonRow } from "@/components/shared/skeleton-row";
@@ -59,29 +57,40 @@ export function StandaloneList() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {data.videos.map((v: VideoSerialized, i: number) => (
-        <Card key={v.id}>
-          <CardContent className="flex items-center gap-3 p-3">
-            <button
-              type="button"
-              aria-label={`Play ${v.title}`}
-              onClick={() => play(i)}
-              className="flex w-6 items-center justify-center"
-            >
-              {currentVideoId === v.id
-                ? <NowPlayingIndicator isPlaying={isPlaying} />
-                : <span className="text-xs text-[var(--color-fg-muted)]">{i + 1}</span>}
-            </button>
-            <span className="min-w-0 flex-1 truncate text-sm">{v.title}</span>
-            <span className="text-xs text-[var(--color-fg-muted)]">{v.channelTitle}</span>
-            <Duration seconds={v.durationSeconds} />
-            <StatusPill status={v.availabilityStatus} />
-            <span className="text-xs text-[var(--color-fg-muted)]">
-              <RelativeTime iso={v.createdAt} />
+        <div
+          key={v.id}
+          className="group flex h-16 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-[var(--color-muted-bg)]"
+        >
+          <div className="flex w-8 shrink-0 items-center justify-end text-xs tabular-nums text-[var(--color-fg-muted)]">
+            {currentVideoId === v.id
+              ? <NowPlayingIndicator isPlaying={isPlaying} />
+              : i + 1}
+          </div>
+          {/* thumbnail with hover play overlay */}
+          <button
+            type="button"
+            aria-label={`Play ${v.title}`}
+            onClick={() => play(i)}
+            className="relative h-12 w-[85px] shrink-0 overflow-hidden rounded-md bg-[var(--color-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
+          >
+            {v.thumbnailUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={v.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+            )}
+            <span className="absolute inset-0 grid place-items-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+              <Play className="h-5 w-5 text-white" />
             </span>
-          </CardContent>
-        </Card>
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">{v.title}</div>
+            <div className="truncate text-xs text-[var(--color-fg-muted)]">{v.channelTitle}</div>
+          </div>
+          <div className="hidden w-14 text-right font-mono text-xs tabular-nums text-[var(--color-fg-muted)] md:block">
+            <Duration seconds={v.durationSeconds} />
+          </div>
+        </div>
       ))}
     </div>
   );

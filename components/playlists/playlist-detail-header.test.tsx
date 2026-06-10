@@ -38,6 +38,7 @@ function makePlaylist(overrides: Partial<PlaylistStatsRow> = {}): PlaylistStatsR
       downloadedItems: 5,
     },
     activeSyncRunId: null,
+    coverThumbs: [],
     ...overrides,
   };
 }

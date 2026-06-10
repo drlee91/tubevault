@@ -22,16 +22,16 @@ function makeP(overrides: Partial<PlaylistStatsRow> = {}): PlaylistStatsRow {
       downloadedItems: 2,
     },
     activeSyncRunId: null,
+    coverThumbs: [],
     ...overrides,
   };
 }
 
 describe("PlaylistCard", () => {
-  it("renders title, channel, stats and 'never' for null lastSyncedAt", () => {
+  it("renders title, channel and item count", () => {
     render(<PlaylistCard p={makeP()} />);
     expect(screen.getByText("My PL")).toBeInTheDocument();
-    expect(screen.getByText(/Chan · 5 items · 2 downloaded/)).toBeInTheDocument();
-    expect(screen.getByText("never")).toBeInTheDocument();
+    expect(screen.getByText(/Chan · 5 Titel/)).toBeInTheDocument();
   });
 
   it("shows syncing icon when activeSyncRunId is set", () => {
@@ -48,5 +48,12 @@ describe("PlaylistCard", () => {
     const p = makeP({ title: null });
     render(<PlaylistCard p={p} />);
     expect(screen.getByText(p.url)).toBeInTheDocument();
+  });
+
+  it("renders progress bar container", () => {
+    const { container } = render(<PlaylistCard p={makeP()} />);
+    // The inner progress div is present (width style applied)
+    const progressFill = container.querySelector("[style*='width']");
+    expect(progressFill).not.toBeNull();
   });
 });

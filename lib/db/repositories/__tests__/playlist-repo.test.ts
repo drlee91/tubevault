@@ -107,6 +107,50 @@ describe("PlaylistRepo", () => {
     }
   });
 
+  it("coverThumbs returns thumbnail urls in position order, skipping nulls", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const repo = new PlaylistRepo(db);
+      const videoRepo = new VideoRepo(db);
+      const itemRepo = new PlaylistItemRepo(db);
+      const id = repo.create({ provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio" });
+      const v1 = videoRepo.upsert({
+        provider: "youtube", externalId: "v1", title: "V1", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: "https://img.youtube.com/vi/v1/0.jpg", availabilityStatus: "available",
+      });
+      const v2 = videoRepo.upsert({
+        provider: "youtube", externalId: "v2", title: "V2", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: "https://img.youtube.com/vi/v2/0.jpg", availabilityStatus: "available",
+      });
+      const v3 = videoRepo.upsert({
+        provider: "youtube", externalId: "v3", title: "V3", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      itemRepo.upsertActive(id, v1, 0);
+      itemRepo.upsertActive(id, v2, 1);
+      itemRepo.upsertActive(id, v3, 2);
+
+      const row = repo.byIdWithStats(id)!;
+      expect(row.coverThumbs).toEqual([
+        "https://img.youtube.com/vi/v1/0.jpg",
+        "https://img.youtube.com/vi/v2/0.jpg",
+      ]);
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it("coverThumbs is empty array when playlist has no thumbnails", () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const repo = new PlaylistRepo(db);
+      const id = repo.create({ provider: "youtube", externalId: "PL2", url: "u2", defaultFormat: "audio" });
+      expect(repo.byIdWithStats(id)!.coverThumbs).toEqual([]);
+    } finally {
+      sqlite.close();
+    }
+  });
+
   // Raw-SQL stats queries bypass drizzle's timestamp mapping; the mapper must
   // convert Unix seconds to ISO or <RelativeTime> renders "NaNy ago".
   it("stats rows expose parseable ISO timestamps, not raw Unix seconds", () => {

@@ -40,6 +40,7 @@ const playlistFixture = {
   createdAt: "2024-01-01T00:00:00Z",
   stats: { totalItems: 1, availableItems: 1, unavailableItems: 0, downloadedItems: 0 },
   activeSyncRunId: null,
+  coverThumbs: [],
 };
 
 const itemFixture = {
