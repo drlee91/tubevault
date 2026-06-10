@@ -5,6 +5,7 @@ import {
   type VideoSerialized,
 } from "@/lib/client/use-standalone-videos";
 import { Play } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Duration } from "@/components/shared/duration";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorCard } from "@/components/shared/error-card";
@@ -58,10 +59,15 @@ export function StandaloneList() {
 
   return (
     <div className="space-y-1">
-      {data.videos.map((v: VideoSerialized, i: number) => (
+      {data.videos.map((v: VideoSerialized, i: number) => {
+        const unavailable = v.availabilityStatus !== "available" && v.availabilityStatus !== "unknown";
+        return (
         <div
           key={v.id}
-          className="group flex h-16 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-[var(--color-muted-bg)]"
+          className={cn(
+            "group flex h-16 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-[var(--color-muted-bg)]",
+            unavailable && "opacity-60",
+          )}
         >
           <div className="flex w-8 shrink-0 items-center justify-end text-xs tabular-nums text-[var(--color-fg-muted)]">
             {currentVideoId === v.id
@@ -84,14 +90,19 @@ export function StandaloneList() {
             </span>
           </button>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">{v.title}</div>
+            <div className="truncate text-sm font-medium">
+              {v.title}
+              {/* dimming alone is invisible to assistive tech */}
+              {unavailable && <span className="sr-only"> ({v.availabilityStatus})</span>}
+            </div>
             <div className="truncate text-xs text-[var(--color-fg-muted)]">{v.channelTitle}</div>
           </div>
           <div className="hidden w-14 text-right font-mono text-xs tabular-nums text-[var(--color-fg-muted)] md:block">
             <Duration seconds={v.durationSeconds} />
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
