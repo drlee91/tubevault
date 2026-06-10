@@ -2,6 +2,8 @@
   "name": "tubevault",
   "version": "0.1.0",
   "private": true,
+  "description": "Self-hosted YouTube playlist archiver — downloads every track as MP3 + MP4 and keeps it playable after the original disappears.",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -5,6 +5,10 @@ import { PlaylistsTabs } from "@/components/playlists/playlists-tabs";
 import { StandaloneList } from "@/components/playlists/standalone-list";
 import { SkeletonRow } from "@/components/shared/skeleton-row";
 
+// Reads live SQLite data — never prerender at build time, or `next build`
+// bakes the builder's database state into the page.
+export const dynamic = "force-dynamic";
+
 export default async function PlaylistsPage() {
   const ctx = await ensureBooted();
   const items = ctx.playlistService.listWithStats();

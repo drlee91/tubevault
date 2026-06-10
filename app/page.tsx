@@ -3,6 +3,10 @@ import { StatsCards } from "@/components/dashboard/stats-cards";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { ContinueListening } from "@/components/dashboard/continue-listening";
 
+// Reads live SQLite data — never prerender at build time, or `next build`
+// bakes the builder's database state into the page.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const ctx = await ensureBooted();
   const stats = ctx.playlistService.dashboardStats();

@@ -10,6 +10,10 @@ import { SyncSection } from "@/components/settings/sync-section";
 import { AdvancedSection } from "@/components/settings/advanced-section";
 import { SkeletonRow } from "@/components/shared/skeleton-row";
 
+// Reads live SQLite data — never prerender at build time, or `next build`
+// bakes the builder's database state into the page.
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const ctx = await ensureBooted();
   const s = ctx.settingsService;
