@@ -16,6 +16,19 @@ import { usePlayerStoreApiOptional } from "@/lib/client/use-player-store";
 import { useSyncExternalStore } from "react";
 import { fromStandaloneVideos } from "@/lib/player/queue-from-items";
 import { buildQueue } from "@/lib/player/queue-build";
+import { DownloadDuo, type DuoSlot } from "./download-duo";
+
+// Standalone rows have no per-file metadata or job tracking — slots are
+// degraded: "present" if the kind is in availableKinds, "missing" otherwise.
+// The optimistic spinner in DownloadDuo bridges the gap until SWR refreshes.
+function slotForKind(
+  kinds: Array<"audio" | "video">,
+  kind: "audio" | "video",
+): DuoSlot {
+  return kinds.includes(kind)
+    ? { state: "present", format: kind === "audio" ? "mp3" : "mp4" }
+    : { state: "missing" };
+}
 
 export function StandaloneList() {
   const { data, error, mutate, isLoading } = useStandaloneVideos();
@@ -97,6 +110,13 @@ export function StandaloneList() {
             </div>
             <div className="truncate text-xs text-[var(--color-fg-muted)]">{v.channelTitle}</div>
           </div>
+          <DownloadDuo
+            videoId={v.id}
+            canDownload={v.availabilityStatus === "available" || v.availabilityStatus === "unknown"}
+            audio={slotForKind(v.availableKinds, "audio")}
+            video={slotForKind(v.availableKinds, "video")}
+            onMutate={() => mutate()}
+          />
           <div className="hidden w-14 text-right font-mono text-xs tabular-nums text-[var(--color-fg-muted)] md:block">
             <Duration seconds={v.durationSeconds} />
           </div>

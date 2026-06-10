@@ -29,6 +29,7 @@ const videoFixture = {
   lastSeenAt: "2024-01-01T00:00:00.000Z",
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
+  availableKinds: [] as Array<"audio" | "video">,
 };
 
 describe("StandaloneList", () => {
@@ -73,6 +74,37 @@ describe("StandaloneList", () => {
     render(<StandaloneList />);
     expect(screen.getByText("My Test Video")).toBeInTheDocument();
     expect(screen.getByText("Test Channel")).toBeInTheDocument();
+  });
+
+  it("shows audio-present slot and enabled video-download button when availableKinds is [audio]", () => {
+    vi.spyOn(hookMod, "useStandaloneVideos").mockReturnValue({
+      ...baseHook,
+      data: {
+        videos: [{ ...videoFixture, availableKinds: ["audio" as const] }],
+      },
+    } as unknown as ReturnType<typeof hookMod.useStandaloneVideos>);
+    render(<StandaloneList />);
+    expect(screen.getByLabelText("audio downloaded (mp3)")).toBeInTheDocument();
+    const videoBtn = screen.getByRole("button", { name: "download video" });
+    expect(videoBtn).not.toBeDisabled();
+  });
+
+  it("disables download buttons when availabilityStatus is removed", () => {
+    vi.spyOn(hookMod, "useStandaloneVideos").mockReturnValue({
+      ...baseHook,
+      data: {
+        videos: [
+          {
+            ...videoFixture,
+            availabilityStatus: "removed" as const,
+            availableKinds: [] as Array<"audio" | "video">,
+          },
+        ],
+      },
+    } as unknown as ReturnType<typeof hookMod.useStandaloneVideos>);
+    render(<StandaloneList />);
+    expect(screen.getByRole("button", { name: "download audio" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "download video" })).toBeDisabled();
   });
 });
 
