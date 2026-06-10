@@ -170,7 +170,6 @@ export function PlaylistDetailHeader({ playlist, items, defaultFormat = "audio" 
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                disabled={false}
                 className="text-[var(--color-status-removed)] focus:text-[var(--color-status-removed)]"
                 onClick={() => setDeleteOpen(true)}
               >
