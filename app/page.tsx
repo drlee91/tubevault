@@ -1,6 +1,7 @@
 import { ensureBooted } from "@/lib/boot";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { ContinueListening } from "@/components/dashboard/continue-listening";
 
 export default async function HomePage() {
   const ctx = await ensureBooted();
@@ -14,6 +15,7 @@ export default async function HomePage() {
         <p className="mt-1 text-sm text-[var(--color-fg-muted)]">Local archive overview</p>
       </header>
       <StatsCards data={stats} />
+      <ContinueListening />
       <section>
         <h2 className="mb-3 text-sm font-medium">Recent activity</h2>
         <RecentActivity items={recent} />
