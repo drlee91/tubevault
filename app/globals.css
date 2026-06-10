@@ -49,6 +49,10 @@
   --color-status-private: #b06a10;
   --color-status-removed: #d93036;
   --color-status-unknown: #6b6d73;
+  --color-status-bg-available: color-mix(in oklch, #2f8a45 14%, transparent);
+  --color-status-bg-private: color-mix(in oklch, #b06a10 14%, transparent);
+  --color-status-bg-removed: color-mix(in oklch, #d93036 14%, transparent);
+  --color-status-bg-unknown: color-mix(in oklch, #6b6d73 14%, transparent);
 }
 
 html,
