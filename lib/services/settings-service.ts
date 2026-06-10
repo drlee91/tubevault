@@ -19,6 +19,9 @@ export type Theme = z.infer<typeof themeSchema>;
 const nonEmptyString = z.string().min(1);
 const concurrencySchema = z.number().int().min(1).max(10);
 
+const cookiesFromBrowserSchema = z.enum(["firefox", "chrome", "edge", "brave", "opera", "vivaldi"]);
+export type CookiesFromBrowser = z.infer<typeof cookiesFromBrowserSchema>;
+
 // ---------- keys ----------
 const KEYS = {
   audioStoragePath: "audio_storage_path",
@@ -34,6 +37,7 @@ const KEYS = {
   theme: "theme",
   ytdlpPath: "ytdlp_path",
   ffmpegPath: "ffmpeg_path",
+  ytdlpCookiesFromBrowser: "ytdlp_cookies_from_browser",
 } as const;
 
 export class SettingsService {
@@ -132,6 +136,18 @@ export class SettingsService {
   setYtdlpPath(value: string | null): void {
     if (value === null) this.repo.delete(KEYS.ytdlpPath);
     else this.repo.set(KEYS.ytdlpPath, nonEmptyString.parse(value));
+  }
+
+  /**
+   * Browser whose cookies yt-dlp should use for downloads (age-restricted
+   * videos need a signed-in YouTube session). null = no cookies.
+   */
+  getYtdlpCookiesFromBrowser(): CookiesFromBrowser | null {
+    return this.repo.get<CookiesFromBrowser>(KEYS.ytdlpCookiesFromBrowser);
+  }
+  setYtdlpCookiesFromBrowser(value: CookiesFromBrowser | null): void {
+    if (value === null) this.repo.delete(KEYS.ytdlpCookiesFromBrowser);
+    else this.repo.set(KEYS.ytdlpCookiesFromBrowser, cookiesFromBrowserSchema.parse(value));
   }
 
   getFfmpegPath(): string | null {

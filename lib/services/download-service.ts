@@ -14,6 +14,8 @@ export interface DownloadServiceSettings {
   defaultAudioFormat: "mp3" | "m4a" | "opus" | "flac";
   defaultAudioBitrate: number;
   defaultVideoQuality: "720p" | "1080p" | "1440p" | "2160p" | "best";
+  /** Browser whose cookies yt-dlp uses for downloads (age-restricted videos). */
+  cookiesFromBrowser?: string | null;
 }
 
 export interface DownloadServiceDeps {
@@ -54,6 +56,7 @@ export class DownloadService {
         outputDir: base,
         filenameStem: stem,
         durationSeconds: video.durationSeconds,
+        cookiesFromBrowser: settings.cookiesFromBrowser ?? null,
       });
     } catch (e) {
       if (e instanceof MediaUnavailableError) {

@@ -19,6 +19,7 @@ const settingsPatchSchema = z.object({
   theme: z.enum(["light", "dark", "system"]).optional(),
   ytdlpPath: z.string().nullable().optional(),
   ffmpegPath: z.string().nullable().optional(),
+  ytdlpCookiesFromBrowser: z.enum(["firefox", "chrome", "edge", "brave", "opera", "vivaldi"]).nullable().optional(),
 });
 
 export async function updateSettingsAction(
@@ -54,6 +55,7 @@ export async function updateSettingsAction(
     if (p.theme !== undefined) s.setTheme(p.theme);
     if (p.ytdlpPath !== undefined) s.setYtdlpPath(p.ytdlpPath);
     if (p.ffmpegPath !== undefined) s.setFfmpegPath(p.ffmpegPath);
+    if (p.ytdlpCookiesFromBrowser !== undefined) s.setYtdlpCookiesFromBrowser(p.ytdlpCookiesFromBrowser);
 
     revalidatePath("/settings");
     return ok({ updated: true });

@@ -110,6 +110,37 @@ describe("DownloadService", () => {
     }
   });
 
+  it("passes the configured cookie browser through to the adapter", async () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const videoRepo = new VideoRepo(db);
+      const mediaRepo = new MediaFileRepo(db);
+      const registry = new ProviderRegistry();
+      const dir = await tmpdir();
+      const filePath = path.join(dir, "t.mp3");
+      await fs.writeFile(filePath, Buffer.alloc(1));
+      let captured: string | null | undefined;
+      registry.register(new FakeAdapter({
+        downloadResult: (_id, opts) => {
+          captured = opts.cookiesFromBrowser;
+          return { filePath, format: "mp3", quality: "192kbps", fileSizeBytes: 1, durationSeconds: 1 };
+        },
+      }));
+      const videoId = videoRepo.upsert({
+        provider: "youtube", externalId: "c1", title: "t",
+        channelTitle: null, durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      const svc = new DownloadService({
+        videoRepo, mediaRepo, registry,
+        settings: () => ({ ...settingsFor(dir, dir), cookiesFromBrowser: "firefox" }),
+      });
+      await svc.download(videoId, "audio");
+      expect(captured).toBe("firefox");
+    } finally {
+      sqlite.close();
+    }
+  });
+
   it("re-throws MediaUnavailableError from adapter as VideoBecameUnavailableError with videoId", async () => {
     const { db, sqlite } = createTestDb();
     try {

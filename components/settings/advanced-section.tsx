@@ -12,10 +12,14 @@ type CheckResult =
   | { ok: true; version: string }
   | { ok: false; error: string };
 
+const COOKIE_BROWSERS = ["firefox", "chrome", "edge", "brave", "opera", "vivaldi"] as const;
+type CookieBrowser = (typeof COOKIE_BROWSERS)[number];
+
 interface Props {
   initial: {
     ytdlpPath: string | null;
     ffmpegPath: string | null;
+    ytdlpCookiesFromBrowser?: CookieBrowser | null;
   };
 }
 
@@ -29,6 +33,17 @@ export function AdvancedSection({ initial }: Props) {
   const [ffmpegResult, setFfmpegResult] = useState<CheckResult | null>(null);
   const [savingFfmpeg, startSaveFfmpeg] = useTransition();
   const [testingFfmpeg, startTestFfmpeg] = useTransition();
+
+  const [cookieBrowser, setCookieBrowser] = useState<"" | CookieBrowser>(initial.ytdlpCookiesFromBrowser ?? "");
+  const [savingCookies, startSaveCookies] = useTransition();
+
+  function saveCookies() {
+    startSaveCookies(async () => {
+      const r = await updateSettingsAction({ ytdlpCookiesFromBrowser: cookieBrowser === "" ? null : cookieBrowser });
+      if (r.ok) toast.success("Cookie source saved");
+      else toast.error("Save failed", { description: r.error.message });
+    });
+  }
 
   function testYtdlp() {
     startTestYtdlp(async () => {
@@ -195,6 +210,33 @@ export function AdvancedSection({ initial }: Props) {
             )}
           </div>
         )}
+      </div>
+
+      {/* YouTube cookies for age-restricted downloads */}
+      <div className="space-y-2">
+        <Label htmlFor="cookie-browser">YouTube cookies</Label>
+        <p className="text-xs text-[var(--color-fg-muted)]">
+          Altersbeschränkte Videos brauchen eine eingeloggte YouTube-Sitzung. yt-dlp liest die
+          Cookies direkt aus dem gewählten Browser (dort mit YouTube eingeloggt sein). Firefox
+          funktioniert am zuverlässigsten — Chrome/Edge blockieren den Cookie-Zugriff auf Windows
+          teilweise, solange der Browser läuft.
+        </p>
+        <div className="flex items-center gap-2 max-w-xl">
+          <select
+            id="cookie-browser"
+            value={cookieBrowser}
+            onChange={(e) => setCookieBrowser(e.target.value as "" | CookieBrowser)}
+            className="h-9 flex-1 rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 text-sm"
+          >
+            <option value="">Aus (keine Cookies)</option>
+            {COOKIE_BROWSERS.map((b) => (
+              <option key={b} value={b}>{b.charAt(0).toUpperCase() + b.slice(1)}</option>
+            ))}
+          </select>
+          <Button variant="outline" onClick={saveCookies} disabled={savingCookies}>
+            {savingCookies ? "Saving…" : "Save"}
+          </Button>
+        </div>
       </div>
     </section>
   );

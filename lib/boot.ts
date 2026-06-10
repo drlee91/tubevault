@@ -126,6 +126,7 @@ async function doBoot(): Promise<BootContext> {
       defaultAudioFormat: coerceAudioFormat(settingsService.getDefaultAudioFormat()),
       defaultAudioBitrate: coerceAudioBitrate(settingsService.getDefaultAudioBitrate()),
       defaultVideoQuality: coerceVideoQuality(settingsService.getDefaultVideoQuality()),
+      cookiesFromBrowser: settingsService.getYtdlpCookiesFromBrowser(),
     }),
   });
 

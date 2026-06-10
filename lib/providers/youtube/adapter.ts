@@ -128,6 +128,11 @@ export class YouTubeAdapter implements MediaProviderAdapter {
       "--no-part",
       "--no-warnings",
     ];
+    if (opts.cookiesFromBrowser) {
+      // Age-restricted videos need a signed-in YouTube session; yt-dlp can
+      // read it straight from a local browser profile.
+      baseArgs.push("--cookies-from-browser", opts.cookiesFromBrowser);
+    }
     const heightCap = (opts.videoQuality ?? "1080p").replace(/p$/, "");
     // Prefer AAC (m4a) audio when YouTube offers it: native MP4 container
     // playback works in every consumer player, including Windows' built-in

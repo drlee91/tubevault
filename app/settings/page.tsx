@@ -26,6 +26,7 @@ export default async function SettingsPage() {
     concurrency: s.getConcurrency(),
     ytdlpPath: s.getYtdlpPath(),
     ffmpegPath: s.getFfmpegPath(),
+    ytdlpCookiesFromBrowser: s.getYtdlpCookiesFromBrowser(),
   };
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">

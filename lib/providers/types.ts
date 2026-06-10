@@ -54,6 +54,8 @@ export interface DownloadOpts {
   outputDir: string;
   filenameStem: string;
   durationSeconds?: number | null;
+  /** Browser whose cookies yt-dlp should use (age-restricted videos). */
+  cookiesFromBrowser?: string | null;
 }
 
 export interface DownloadResult {
