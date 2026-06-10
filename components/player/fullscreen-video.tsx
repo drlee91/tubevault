@@ -36,8 +36,8 @@ export function FullscreenVideo() {
     <div className="pointer-events-none fixed inset-0 z-40">
       {showControls && (
         <div className="pointer-events-auto absolute right-4 top-4 flex gap-2">
-          <button aria-label="Expand" onClick={expandNative} className="rounded bg-white/10 p-2 text-white hover:bg-white/20"><Maximize2 className="h-5 w-5" /></button>
-          <button aria-label="Close" onClick={() => store.getState().closeOverlays()} className="rounded bg-white/10 p-2 text-white hover:bg-white/20"><X className="h-5 w-5" /></button>
+          <button aria-label="Expand" onClick={expandNative} className="rounded-lg bg-black/60 p-2 text-white backdrop-blur hover:bg-black/80"><Maximize2 className="h-5 w-5" /></button>
+          <button aria-label="Close" onClick={() => store.getState().closeOverlays()} className="rounded-lg bg-black/60 p-2 text-white backdrop-blur hover:bg-black/80"><X className="h-5 w-5" /></button>
         </div>
       )}
     </div>

@@ -32,7 +32,7 @@ export function MobilePlayerSheet() {
         <button
           aria-label={isPlaying ? "Pause" : "Resume"}
           onClick={(e) => { e.stopPropagation(); store.getState().togglePlay(); }}
-          className="rounded-full bg-[var(--color-fg)] p-2 text-[var(--color-bg)]"
+          className="rounded-full bg-[var(--color-brand)] p-2 text-[var(--color-brand-fg)]"
         >
           {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </button>
