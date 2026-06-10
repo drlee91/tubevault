@@ -7,8 +7,10 @@ import { downloadMissingAction } from "@/lib/actions/playlist-actions";
 
 export function DownloadMissingButton({
   playlistId,
+  variant = "button",
 }: {
   playlistId: number;
+  variant?: "button" | "link";
 }) {
   const [pending, start] = useTransition();
   function onClick() {
@@ -23,6 +25,20 @@ export function DownloadMissingButton({
       }
     });
   }
+
+  if (variant === "link") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={pending}
+        className="text-[var(--color-brand)] hover:underline disabled:opacity-50"
+      >
+        Fehlende laden
+      </button>
+    );
+  }
+
   return (
     <Button
       onClick={onClick}
