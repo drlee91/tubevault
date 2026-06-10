@@ -51,7 +51,7 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, default
         type="button"
         aria-label={`Play ${item.video.title}`}
         onClick={onPlay}
-        className="relative h-12 w-[85px] shrink-0 overflow-hidden rounded-md bg-[var(--color-surface-2)]"
+        className="relative h-12 w-[85px] shrink-0 overflow-hidden rounded-md bg-[var(--color-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
       >
         {item.video.thumbnailUrl && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -62,7 +62,12 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, default
         </span>
       </button>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{item.video.title}</div>
+        <div className="truncate text-sm font-medium">
+          {item.video.title}
+          {/* The status pill is gone from rows; dimming alone is invisible to
+              assistive tech, so name the problem for screen readers. */}
+          {unavailable && <span className="sr-only"> ({status})</span>}
+        </div>
         <div className="truncate text-xs text-[var(--color-fg-muted)]">{item.video.channelTitle}</div>
       </div>
       <DownloadDuo
