@@ -1,6 +1,6 @@
 "use client";
 
-import { Play } from "lucide-react";
+import { Archive, Play } from "lucide-react";
 import { Duration } from "@/components/shared/duration";
 import { TrackContextMenu } from "./track-context-menu";
 import { NowPlayingIndicator } from "@/components/player/now-playing-indicator";
@@ -22,10 +22,13 @@ interface Props {
 function slotFor(
   file: { format: string; fileSizeBytes: number } | null,
   job: PendingKindJob | null,
+  allowRetry: boolean,
 ): DuoSlot {
   if (file) return { state: "present", format: file.format, sizeBytes: file.fileSizeBytes };
   if (job && (job.status === "queued" || job.status === "running")) return { state: "pending", status: job.status };
-  if (job && job.status === "failed") return { state: "failed", jobId: job.id };
+  // A failed job on a video that no longer exists upstream would retry into
+  // the same wall forever — show the (disabled) missing state instead.
+  if (job && job.status === "failed" && allowRetry) return { state: "failed", jobId: job.id };
   return { state: "missing" };
 }
 
@@ -38,10 +41,13 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, default
     ...(item.videoFile ? (["video"] as const) : []),
   ];
   const unavailable = status !== "available" && status !== "unknown";
+  // Gone upstream but rescued locally — the vault's whole point. Show it as a
+  // win (archive badge), not as a dimmed problem row.
+  const saved = unavailable && downloadedKinds.length > 0;
   return (
     <div className={cn(
       "group flex h-16 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-[var(--color-muted-bg)]",
-      unavailable && "opacity-60",
+      unavailable && !saved && "opacity-60",
     )}>
       <div className="flex w-8 shrink-0 items-center justify-end text-xs tabular-nums text-[var(--color-fg-muted)]">
         {isCurrent ? <NowPlayingIndicator isPlaying={!!isPlaying} /> : position + 1}
@@ -62,19 +68,28 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, default
         </span>
       </button>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">
-          {item.video.title}
+        <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+          <span className="truncate">{item.video.title}</span>
+          {saved && (
+            <span
+              aria-label="Auf YouTube entfernt – lokal gesichert"
+              title="Auf YouTube entfernt – lokal gesichert"
+              className="inline-flex shrink-0 text-[var(--color-ok)]"
+            >
+              <Archive className="h-3.5 w-3.5" />
+            </span>
+          )}
           {/* The status pill is gone from rows; dimming alone is invisible to
               assistive tech, so name the problem for screen readers. */}
-          {unavailable && <span className="sr-only"> ({status})</span>}
+          {unavailable && !saved && <span className="sr-only"> ({status})</span>}
         </div>
         <div className="truncate text-xs text-[var(--color-fg-muted)]">{item.video.channelTitle}</div>
       </div>
       <DownloadDuo
         videoId={item.video.id}
         canDownload={status === "available" || status === "unknown"}
-        audio={slotFor(item.audioFile, item.pendingJobs.audio)}
-        video={slotFor(item.videoFile, item.pendingJobs.video)}
+        audio={slotFor(item.audioFile, item.pendingJobs.audio, !unavailable)}
+        video={slotFor(item.videoFile, item.pendingJobs.video, !unavailable)}
         onMutate={onMutate}
       />
       <div className="hidden w-14 text-right font-mono text-xs tabular-nums text-[var(--color-fg-muted)] md:block">

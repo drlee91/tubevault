@@ -4,7 +4,7 @@ import {
   useStandaloneVideos,
   type VideoSerialized,
 } from "@/lib/client/use-standalone-videos";
-import { Play } from "lucide-react";
+import { Archive, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Duration } from "@/components/shared/duration";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -74,12 +74,14 @@ export function StandaloneList() {
     <div className="space-y-1">
       {data.videos.map((v: VideoSerialized, i: number) => {
         const unavailable = v.availabilityStatus !== "available" && v.availabilityStatus !== "unknown";
+        // Gone upstream but rescued locally — show as archived, not as a problem.
+        const saved = unavailable && v.availableKinds.length > 0;
         return (
         <div
           key={v.id}
           className={cn(
             "group flex h-16 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-[var(--color-muted-bg)]",
-            unavailable && "opacity-60",
+            unavailable && !saved && "opacity-60",
           )}
         >
           <div className="flex w-8 shrink-0 items-center justify-end text-xs tabular-nums text-[var(--color-fg-muted)]">
@@ -103,10 +105,19 @@ export function StandaloneList() {
             </span>
           </button>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">
-              {v.title}
+            <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+              <span className="truncate">{v.title}</span>
+              {saved && (
+                <span
+                  aria-label="Auf YouTube entfernt – lokal gesichert"
+                  title="Auf YouTube entfernt – lokal gesichert"
+                  className="inline-flex shrink-0 text-[var(--color-ok)]"
+                >
+                  <Archive className="h-3.5 w-3.5" />
+                </span>
+              )}
               {/* dimming alone is invisible to assistive tech */}
-              {unavailable && <span className="sr-only"> ({v.availabilityStatus})</span>}
+              {unavailable && !saved && <span className="sr-only"> ({v.availabilityStatus})</span>}
             </div>
             <div className="truncate text-xs text-[var(--color-fg-muted)]">{v.channelTitle}</div>
           </div>

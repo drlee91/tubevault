@@ -79,6 +79,57 @@ describe("TrackRow", () => {
     expect(row.className).not.toContain("opacity-60");
   });
 
+  it("saved tracks (removed on YouTube but downloaded) are not dimmed and show the archived badge", () => {
+    const item = makeItem({
+      video: {
+        id: 1, externalId: "abc123", title: "Test Video Title", channelTitle: "Test Channel",
+        durationSeconds: 240, thumbnailUrl: null, availabilityStatus: "removed", availabilityReason: null,
+      },
+      audioFile: { id: 5, format: "mp3", quality: "192", fileSizeBytes: 1000, downloadedAt: "2024-01-01T00:00:00.000Z" },
+      videoFile: { id: 6, format: "mp4", quality: "1080p", fileSizeBytes: 9000, downloadedAt: "2024-01-01T00:00:00.000Z" },
+      availableKinds: ["audio", "video"],
+    });
+
+    const { container } = render(<TrackRow item={item} position={0} />);
+
+    const row = container.firstChild as HTMLElement;
+    expect(row.className).not.toContain("opacity-60");
+    expect(screen.getByLabelText(/auf youtube entfernt/i)).toBeInTheDocument();
+  });
+
+  it("removed tracks without local files show no retry button (no pointless retries)", () => {
+    const item = makeItem({
+      video: {
+        id: 1, externalId: "abc123", title: "Test Video Title", channelTitle: "Test Channel",
+        durationSeconds: 240, thumbnailUrl: null, availabilityStatus: "removed", availabilityReason: null,
+      },
+      pendingJobs: {
+        audio: { id: 9, status: "failed", attempts: 1, lastError: "Video unavailable" },
+        video: { id: 10, status: "failed", attempts: 1, lastError: "Video unavailable" },
+      },
+    });
+
+    render(<TrackRow item={item} position={0} />);
+
+    expect(screen.queryByRole("button", { name: /retry audio download/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry video download/i })).not.toBeInTheDocument();
+    // the slots fall back to the disabled missing state instead
+    expect(screen.getByRole("button", { name: /download audio/i })).toBeDisabled();
+  });
+
+  it("available tracks with a failed job still offer the retry button", () => {
+    const item = makeItem({
+      pendingJobs: {
+        audio: { id: 9, status: "failed", attempts: 1, lastError: "network" },
+        video: null,
+      },
+    });
+
+    render(<TrackRow item={item} position={0} />);
+
+    expect(screen.getByRole("button", { name: /retry audio download/i })).toBeInTheDocument();
+  });
+
   it("does not apply opacity-60 when status is unknown", () => {
     const item = makeItem({
       video: {
