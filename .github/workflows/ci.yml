@@ -8,6 +8,9 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    # The suite finishes in ~2 min on a 2-core runner; anything longer is a
+    # hung test, not a slow one — kill it so logs become readable.
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
 
@@ -27,4 +30,5 @@ jobs:
         run: npm run typecheck
 
       - name: Test
-        run: npm test
+        # verbose: when a test hangs, the log shows which one started last
+        run: npm test -- --reporter=verbose
