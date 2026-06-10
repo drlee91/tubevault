@@ -44,28 +44,17 @@ describe("TrackRow", () => {
     expect(screen.getByText("Test Channel")).toBeInTheDocument();
   });
 
-  it("shows JobStatusPill when pendingJob present", () => {
-    const item = makeItem({
-      pendingJob: {
-        id: 10,
-        type: "download",
-        status: "running",
-        attempts: 1,
-        lastError: null,
-      },
-    });
+  it("does not render StatusPill or JobStatusPill text", () => {
+    render(<TrackRow item={makeItem()} position={0} />);
 
-    render(<TrackRow item={item} position={0} />);
-
-    // JobStatusPill renders the status label
-    expect(screen.getByText("running")).toBeInTheDocument();
-    // StatusPill (availability) should NOT be visible — "available" label not rendered
+    // No pill labels in the row anymore
     expect(screen.queryByText("available")).not.toBeInTheDocument();
+    expect(screen.queryByText("running")).not.toBeInTheDocument();
+    expect(screen.queryByText("removed")).not.toBeInTheDocument();
   });
 
-  it("shows StatusPill when no pendingJob", () => {
+  it("applies opacity-60 when status is not available or unknown", () => {
     const item = makeItem({
-      pendingJob: null,
       video: {
         id: 1,
         externalId: "abc123",
@@ -78,17 +67,42 @@ describe("TrackRow", () => {
       },
     });
 
-    render(<TrackRow item={item} position={0} />);
+    const { container } = render(<TrackRow item={item} position={0} />);
 
-    // StatusPill renders the label for the availability status
-    expect(screen.getByText("removed")).toBeInTheDocument();
-    // JobStatusPill should NOT be present (no running/queued/etc text)
-    expect(screen.queryByText("running")).not.toBeInTheDocument();
+    const row = container.firstChild as HTMLElement;
+    expect(row.className).toContain("opacity-60");
+  });
+
+  it("does not apply opacity-60 when status is available", () => {
+    const { container } = render(<TrackRow item={makeItem()} position={0} />);
+
+    const row = container.firstChild as HTMLElement;
+    expect(row.className).not.toContain("opacity-60");
+  });
+
+  it("does not apply opacity-60 when status is unknown", () => {
+    const item = makeItem({
+      video: {
+        id: 1,
+        externalId: "abc123",
+        title: "Test Video Title",
+        channelTitle: "Test Channel",
+        durationSeconds: 240,
+        thumbnailUrl: null,
+        availabilityStatus: "unknown",
+        availabilityReason: null,
+      },
+    });
+
+    const { container } = render(<TrackRow item={item} position={0} />);
+
+    const row = container.firstChild as HTMLElement;
+    expect(row.className).not.toContain("opacity-60");
   });
 });
 
 describe("TrackRow click", () => {
-  it("invokes onPlay when row clicked", async () => {
+  it("invokes onPlay when thumbnail button clicked", async () => {
     const onPlay = vi.fn();
     render(<TrackRow item={makeItem()} position={0} onPlay={onPlay} />);
     await userEvent.click(screen.getByRole("button", { name: /play test video title/i }));

@@ -22,18 +22,18 @@ describe("ItemFilterChips", () => {
     expect(screen.getByText("all")).toBeInTheDocument();
     expect(screen.getByText("available")).toBeInTheDocument();
     expect(screen.getByText("unavailable")).toBeInTheDocument();
-    // "all" chip should have the active (inverted) classes
+    // "all" chip should have the active segmented-control class
     const allBtn = screen.getByText("all");
-    expect(allBtn.className).toContain("bg-[var(--color-fg)]");
+    expect(allBtn.className).toContain("bg-[var(--color-surface-2)]");
   });
 
   it("reflects ?filter=unavailable from URL", () => {
     searchParamsValue = new URLSearchParams("filter=unavailable");
     render(<ItemFilterChips />);
     const unavailableBtn = screen.getByText("unavailable");
-    expect(unavailableBtn.className).toContain("bg-[var(--color-fg)]");
+    expect(unavailableBtn.className).toContain("bg-[var(--color-surface-2)]");
     const allBtn = screen.getByText("all");
-    expect(allBtn.className).toContain("bg-[var(--color-muted-bg)]");
+    expect(allBtn.className).not.toContain("bg-[var(--color-surface-2)]");
   });
 
   it('clicking "available" calls router.replace with ?filter=available', async () => {
