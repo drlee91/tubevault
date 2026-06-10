@@ -41,6 +41,8 @@ npm start
 
 Open <http://localhost:3000>, click **Add**, paste a playlist URL — downloads start on their own.
 
+No YouTube account or login is needed for public playlists. Only your own private playlists and age-restricted videos require the one-time cookie setup described [below](#private-playlists--age-restricted-videos).
+
 **One-click start:** point a desktop shortcut at `scripts/start-tubevault.ps1`. It builds once if needed, starts the server hidden in the background and opens the app in your browser.
 
 ### macOS / Linux
@@ -49,7 +51,7 @@ Works the same — install `node` (20+), `yt-dlp` and `ffmpeg` via Homebrew or y
 
 ## Private playlists & age-restricted videos
 
-YouTube hides private playlists and age-restricted videos from anonymous access. In **Settings → Advanced**, pick the browser you're logged into YouTube with — yt-dlp then reads its cookies for syncs and downloads. Firefox is the most reliable choice; Chrome locks its cookie database on Windows while it's running.
+TubeVault itself has no YouTube login — public playlists work without any of this. But YouTube hides private playlists and age-restricted videos from anonymous access, so for those TubeVault borrows the session of a browser you're already signed into: in **Settings → Advanced**, pick that browser, and yt-dlp reads its cookies for syncs and downloads from then on. Stay signed in to YouTube in that browser, otherwise the borrowed session expires. Firefox is the most reliable choice; Chrome locks its cookie database on Windows while it's running.
 
 ## How it works
 
