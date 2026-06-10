@@ -32,7 +32,7 @@ winget install Gyan.FFmpeg           # audio/video conversion
 Then set up TubeVault (restart the terminal first so the new tools are on PATH):
 
 ```powershell
-git clone https://github.com/<your-username>/tubevault.git
+git clone https://github.com/drlee91/tubevault.git
 cd tubevault
 npm install
 npm run build

@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-27
 **Status:** 20/47 tasks complete (~43%). Phases 1–6 done. Phase 7 (UI) ahead.
-**Worktree:** `C:/Users/stein/RiderProjects/TubeVault/.worktrees/plan-5-ui`
+**Worktree:** `<repo>/.worktrees/plan-5-ui`
 **Branch:** `plan-5-ui`
 **Last commit:** `f4f3e74` — `feat(ui): SWR fetcher + polling hooks (detail, jobs, summary, standalone, usage)`
 **Tests:** 251/251 passing across 56 test files
@@ -176,7 +176,7 @@ The plan file has full task text + code blocks. The next session should re-read 
 Before starting Task 21, run:
 
 ```bash
-cd C:/Users/stein/RiderProjects/TubeVault/.worktrees/plan-5-ui
+cd <repo>/.worktrees/plan-5-ui
 git status                # should be clean
 git log --oneline a472d58..HEAD | head -22   # 20 task commits + 1 plan commit
 npm test -- --run | tail -5                  # 251 passing
