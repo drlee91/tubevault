@@ -15,21 +15,26 @@ describe("TopbarJobBadge", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows count when active", () => {
+  it("shows spinner when active", () => {
     vi.spyOn(hookMod, "useJobSummary").mockReturnValue({
       data: { queued: 1, running: 2, failed: 0, completed24h: 0 },
       error: undefined, isLoading: false, isValidating: false, mutate: vi.fn(),
     } as unknown as ReturnType<typeof hookMod.useJobSummary>);
     render(<TopbarJobBadge />);
-    expect(screen.getByText("3 active")).toBeInTheDocument();
+    // Loader2 renders an svg; link is present with correct aria-label
+    expect(screen.getByRole("link", { name: /active jobs/i })).toBeInTheDocument();
+    expect(document.querySelector("svg")).toBeInTheDocument();
   });
 
-  it("highlights when failed > 0", () => {
+  it("shows failure count chip when failed > 0", () => {
     vi.spyOn(hookMod, "useJobSummary").mockReturnValue({
       data: { queued: 0, running: 0, failed: 2, completed24h: 0 },
       error: undefined, isLoading: false, isValidating: false, mutate: vi.fn(),
     } as unknown as ReturnType<typeof hookMod.useJobSummary>);
     render(<TopbarJobBadge />);
-    expect(screen.getByText(/2 failed/)).toBeInTheDocument();
+    // chip shows the count digit
+    expect(screen.getByText(/2/)).toBeInTheDocument();
+    // sr-only text present
+    expect(screen.getByText(/failed jobs/i)).toBeInTheDocument();
   });
 });
