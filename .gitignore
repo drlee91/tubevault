@@ -45,6 +45,7 @@ yarn-error.log*
 # Editor / OS
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 .DS_Store
