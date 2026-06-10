@@ -23,6 +23,7 @@ export function PlayerBar() {
   const volume = usePlayerStore((s) => s.volume);
   const shuffle = usePlayerStore((s) => s.shuffle);
   const repeat = usePlayerStore((s) => s.repeat);
+  const mode = usePlayerStore((s) => s.mode);
   const stripeRef = useRef<HTMLDivElement | null>(null);
 
   if (!item) return null;
@@ -90,7 +91,12 @@ export function PlayerBar() {
         </div>
         <div className="flex items-center justify-end gap-3 text-xs tabular-nums text-[var(--color-fg-muted)]">
           <span>{formatTime(position)} / {formatTime(duration)}</span>
-          <button aria-label="Open queue" onClick={() => store.getState().openQueue()} className="p-1">
+          <button
+            aria-label="Open queue"
+            aria-pressed={mode === "queue-open"}
+            onClick={() => mode === "queue-open" ? store.getState().closeOverlays() : store.getState().openQueue()}
+            className="p-1"
+          >
             <ListMusic className="h-4 w-4" />
           </button>
           <button aria-label={volume === 0 ? "Unmute" : "Mute"} onClick={() => store.getState().toggleMute()} className="p-1">

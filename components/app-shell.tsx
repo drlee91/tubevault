@@ -4,6 +4,7 @@ import { BottomNav } from "./bottom-nav";
 import { PlayerProvider } from "./player/player-provider";
 import { PlayerBar } from "./player/player-bar";
 import { QueueDrawer } from "./player/queue-drawer";
+import { QueuePanel } from "./player/queue-panel";
 import { FullscreenAudio } from "./player/fullscreen-audio";
 import { FullscreenVideo } from "./player/fullscreen-video";
 import { MobilePlayerSheet } from "./player/mobile-sheet";
@@ -24,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <BottomNav />
         <MobilePlayerSheet />
         <QueueDrawer />
+        <QueuePanel />
         <FullscreenAudio />
         <FullscreenVideo />
       </div>

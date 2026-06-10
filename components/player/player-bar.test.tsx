@@ -81,4 +81,24 @@ describe("<PlayerBar>", () => {
     await userEvent.click(btn);
     expect(store.getState().repeat).toBe("one");
   });
+
+  it("queue button opens queue when mode is not queue-open", async () => {
+    const store = withStore(); loadOne(store);
+    render(<PlayerStoreProvider store={store}><PlayerBar /></PlayerStoreProvider>);
+    const btn = screen.getByRole("button", { name: /open queue/i });
+    expect(btn).toHaveAttribute("aria-pressed", "false");
+    await userEvent.click(btn);
+    expect(store.getState().mode).toBe("queue-open");
+    expect(btn).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("queue button closes queue when mode is queue-open", async () => {
+    const store = withStore(); loadOne(store);
+    store.getState().openQueue();
+    render(<PlayerStoreProvider store={store}><PlayerBar /></PlayerStoreProvider>);
+    const btn = screen.getByRole("button", { name: /open queue/i });
+    expect(btn).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(btn);
+    expect(store.getState().mode).toBe("mini");
+  });
 });
