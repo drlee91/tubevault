@@ -12,6 +12,13 @@ export class DownloadVideoHandler implements JobHandler {
     const payload = job.payload as unknown as DownloadVideoPayload;
     try {
       await this.dl.download(payload.videoId, payload.kind);
+      // A finished download is proof the video is fetchable — lift "unknown"
+      // (flat-playlist extraction often reports no availability) to
+      // "available" so status filters and counts reflect reality. More
+      // specific states (age_restricted, region_blocked, …) are kept.
+      if (this.videoRepo.byId(payload.videoId)?.availabilityStatus === "unknown") {
+        this.videoRepo.setAvailability(payload.videoId, "available", null);
+      }
       return { success: true };
     } catch (err) {
       if (err instanceof VideoBecameUnavailableError) {
