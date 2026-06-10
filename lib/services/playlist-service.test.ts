@@ -186,7 +186,7 @@ describe("getDetailFull", () => {
     }
   });
 
-  it("returns playlist with items joined to videos, files, pendingJob", async () => {
+  it("returns playlist with items joined to videos, files, pendingJobs", async () => {
     const ctx = await createTestBootContext();
     try {
       // Seed playlist
@@ -222,10 +222,10 @@ describe("getDetailFull", () => {
         durationSeconds: 300,
       });
 
-      // Seed a queued download_video job with matching videoId in payload
+      // Seed a queued download_video job (audio kind) with matching videoId in payload
       ctx.jobRepo.insert({
         type: "download_video",
-        payload: { videoId },
+        payload: { videoId, kind: "audio" },
         priority: 0,
       });
 
@@ -239,14 +239,14 @@ describe("getDetailFull", () => {
       expect(detail!.items[0]!.video.title).toBe("Detail Video");
       expect(detail!.items[0]!.audioFile?.id).toBe(audioFileId);
       expect(detail!.items[0]!.videoFile).toBeNull();
-      expect(detail!.items[0]!.pendingJob?.type).toBe("download_video");
+      expect(detail!.items[0]!.pendingJobs.audio).not.toBeNull();
       expect(detail!.recentSyncRuns).toHaveLength(1);
     } finally {
       ctx.cleanup();
     }
   });
 
-  it("returns null audioFile/videoFile/pendingJob when none present", async () => {
+  it("returns null audioFile/videoFile/pendingJobs when none present", async () => {
     const ctx = await createTestBootContext();
     try {
       const playlistId = ctx.playlistRepo.create({
@@ -270,7 +270,8 @@ describe("getDetailFull", () => {
       expect(detail).not.toBeNull();
       expect(detail!.items[0]!.audioFile).toBeNull();
       expect(detail!.items[0]!.videoFile).toBeNull();
-      expect(detail!.items[0]!.pendingJob).toBeNull();
+      expect(detail!.items[0]!.pendingJobs.audio).toBeNull();
+      expect(detail!.items[0]!.pendingJobs.video).toBeNull();
       expect(detail!.recentSyncRuns).toEqual([]);
     } finally {
       ctx.cleanup();

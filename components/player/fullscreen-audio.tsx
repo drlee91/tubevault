@@ -40,7 +40,7 @@ export function FullscreenAudio() {
       </header>
       {tab === "now" ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
-          <div className="grid h-[420px] w-[420px] max-w-[80vw] place-items-center rounded-xl bg-[var(--color-muted-bg)]">
+          <div className="grid h-[420px] w-[420px] max-h-[80vw] max-w-[80vw] place-items-center rounded-xl bg-[var(--color-muted-bg)]">
             {item.thumbnailUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.thumbnailUrl} alt="" className="h-full w-full rounded-xl object-cover" />

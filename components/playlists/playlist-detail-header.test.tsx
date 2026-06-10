@@ -61,7 +61,6 @@ function makeItem(overrides: Partial<PlaylistDetailItem> = {}): PlaylistDetailIt
     },
     audioFile: null,
     videoFile: null,
-    pendingJob: null,
     pendingJobs: { audio: null, video: null },
     availableKinds: ["audio"],
     ...overrides,

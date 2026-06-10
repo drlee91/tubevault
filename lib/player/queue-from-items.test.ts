@@ -10,7 +10,7 @@ function detailItem(over: Partial<PlaylistDetailItem> = {}): PlaylistDetailItem 
       id: 1, externalId: "v1", title: "Title", channelTitle: "Chan",
       durationSeconds: 60, thumbnailUrl: "u", availabilityStatus: "available", availabilityReason: null,
     },
-    audioFile: null, videoFile: null, pendingJob: null,
+    audioFile: null, videoFile: null,
     pendingJobs: { audio: null, video: null },
     availableKinds: ["audio"],
     ...over,

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { downloadVideoAction } from "@/lib/actions/video-actions";
 import { retryJobAction } from "@/lib/actions/job-actions";
 import { cn } from "@/lib/utils";
+import { formatBytes } from "@/lib/utils/format-bytes";
 
 export type DuoSlot =
   | { state: "present"; format: string; sizeBytes?: number }
@@ -22,16 +23,6 @@ interface Props {
   onMutate?: () => void;
 }
 
-function formatBytes(bytes: number): string {
-  const units = ["B", "KB", "MB", "GB", "TB"] as const;
-  let n = bytes;
-  let i = 0;
-  while (n >= 1024 && i < units.length - 1) {
-    n /= 1024;
-    i++;
-  }
-  return i === 0 ? `${n} ${units[i]}` : `${n.toFixed(1)} ${units[i]}`;
-}
 
 interface SlotProps {
   kind: "audio" | "video";

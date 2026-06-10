@@ -60,7 +60,6 @@ const itemFixture = {
   position: 0,
   audioFile: null,
   videoFile: null,
-  pendingJob: null,
   pendingJobs: { audio: null, video: null },
   availableKinds: [],
 };
