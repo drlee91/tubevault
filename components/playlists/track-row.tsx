@@ -1,13 +1,13 @@
 "use client";
 
-import { Music, Film } from "lucide-react";
 import { JobStatusPill } from "@/components/shared/job-status-pill";
 import { StatusPill, type AvailabilityStatus } from "@/components/shared/status-pill";
 import { Duration } from "@/components/shared/duration";
 import { RelativeTime } from "@/components/shared/relative-time";
 import { TrackContextMenu } from "./track-context-menu";
 import { NowPlayingIndicator } from "@/components/player/now-playing-indicator";
-import type { PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
+import { DownloadDuo, type DuoSlot } from "./download-duo";
+import type { PlaylistDetailItem, PendingKindJob } from "@/lib/db/repositories/playlist-item-repo";
 import { fromPlaylistDetailItems } from "@/lib/player/queue-from-items";
 
 interface Props {
@@ -17,9 +17,20 @@ interface Props {
   isCurrent?: boolean;
   isPlaying?: boolean;
   defaultFormat?: "audio" | "video";
+  onMutate?: () => void;
 }
 
-export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, defaultFormat = "audio" }: Props) {
+function slotFor(
+  file: { format: string; fileSizeBytes: number } | null,
+  job: PendingKindJob | null,
+): DuoSlot {
+  if (file) return { state: "present", format: file.format, sizeBytes: file.fileSizeBytes };
+  if (job && (job.status === "queued" || job.status === "running")) return { state: "pending", status: job.status };
+  if (job && job.status === "failed") return { state: "failed", jobId: job.id };
+  return { state: "missing" };
+}
+
+export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, defaultFormat = "audio", onMutate }: Props) {
   const youtubeUrl = `https://www.youtube.com/watch?v=${item.video.externalId}`;
   const queueItem = fromPlaylistDetailItems([item], defaultFormat)[0];
   const status = item.video.availabilityStatus;
@@ -57,19 +68,13 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, default
       <div className="hidden w-20 text-right text-xs text-[var(--color-fg-muted)] md:block">
         <RelativeTime iso={item.addedAt} />
       </div>
-      {/* Downloaded media on disk — one icon per kind, empty when nothing is local. */}
-      <div className="flex w-12 shrink-0 items-center justify-end gap-1 text-[var(--color-status-available)]">
-        {item.audioFile && (
-          <span title={`audio downloaded (${item.audioFile.format})`}>
-            <Music className="h-3.5 w-3.5" aria-label="audio downloaded" />
-          </span>
-        )}
-        {item.videoFile && (
-          <span title={`video downloaded (${item.videoFile.format})`}>
-            <Film className="h-3.5 w-3.5" aria-label="video downloaded" />
-          </span>
-        )}
-      </div>
+      <DownloadDuo
+        videoId={item.video.id}
+        canDownload={status === "available" || status === "unknown"}
+        audio={slotFor(item.audioFile, item.pendingJobs.audio)}
+        video={slotFor(item.videoFile, item.pendingJobs.video)}
+        onMutate={onMutate}
+      />
       <div className="w-32 text-right">
         {item.pendingJob ? (
           <JobStatusPill status={item.pendingJob.status as Parameters<typeof JobStatusPill>[0]["status"]} />
