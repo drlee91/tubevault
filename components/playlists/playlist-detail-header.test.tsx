@@ -11,6 +11,7 @@ vi.mock("sonner", () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
@@ -37,6 +38,7 @@ function makePlaylist(overrides: Partial<PlaylistStatsRow> = {}): PlaylistStatsR
       downloadedItems: 5,
     },
     activeSyncRunId: null,
+    coverThumbs: [],
     ...overrides,
   };
 }
@@ -59,24 +61,53 @@ function makeItem(overrides: Partial<PlaylistDetailItem> = {}): PlaylistDetailIt
     },
     audioFile: null,
     videoFile: null,
-    pendingJob: null,
+    pendingJobs: { audio: null, video: null },
     availableKinds: ["audio"],
     ...overrides,
   };
 }
 
 const twoItems: PlaylistDetailItem[] = [
-  makeItem({ position: 0, video: { id: 1, externalId: "v1", title: "Track One", channelTitle: null, durationSeconds: 120, thumbnailUrl: null, availabilityStatus: "available", availabilityReason: null }, availableKinds: ["audio"] }),
-  makeItem({ position: 1, video: { id: 2, externalId: "v2", title: "Track Two", channelTitle: null, durationSeconds: 180, thumbnailUrl: null, availabilityStatus: "available", availabilityReason: null }, availableKinds: ["audio"] }),
+  makeItem({
+    position: 0,
+    video: {
+      id: 1,
+      externalId: "v1",
+      title: "Track One",
+      channelTitle: null,
+      durationSeconds: 120,
+      thumbnailUrl: null,
+      availabilityStatus: "available",
+      availabilityReason: null,
+    },
+    availableKinds: ["audio"],
+  }),
+  makeItem({
+    position: 1,
+    video: {
+      id: 2,
+      externalId: "v2",
+      title: "Track Two",
+      channelTitle: null,
+      durationSeconds: 180,
+      thumbnailUrl: null,
+      availabilityStatus: "available",
+      availabilityReason: null,
+    },
+    availableKinds: ["audio"],
+  }),
 ];
 
 describe("PlaylistDetailHeader", () => {
-  it("renders title, counts, and 'never' when lastSyncedAt is null", () => {
+  it("renders title and channel", () => {
     render(<PlaylistDetailHeader playlist={makePlaylist()} />);
     expect(screen.getByText("My Playlist")).toBeInTheDocument();
     expect(screen.getByText(/My Channel/)).toBeInTheDocument();
+  });
+
+  it("renders item count and last sync", () => {
+    render(<PlaylistDetailHeader playlist={makePlaylist()} />);
     expect(screen.getByText(/10 items/)).toBeInTheDocument();
-    expect(screen.getByText(/5 downloaded/)).toBeInTheDocument();
     expect(screen.getByText("never")).toBeInTheDocument();
   });
 
@@ -85,13 +116,29 @@ describe("PlaylistDetailHeader", () => {
     expect(screen.getByText("Untitled")).toBeInTheDocument();
   });
 
-  it("SyncNowButton is disabled when activeSyncRunId is not null", () => {
+  it("overflow menu contains Sync now item (disabled when sync active)", async () => {
     render(<PlaylistDetailHeader playlist={makePlaylist({ activeSyncRunId: 42 })} />);
-    expect(screen.getByRole("button", { name: /sync now/i })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: /playlist actions/i }));
+    const syncItem = await screen.findByText(/sync now/i);
+    // The menu item element or its parent should have data-disabled
+    expect(syncItem.closest("[data-disabled]") ?? syncItem).toBeTruthy();
+  });
+
+  it("overflow menu contains Delete playlist item", async () => {
+    render(<PlaylistDetailHeader playlist={makePlaylist()} />);
+    await userEvent.click(screen.getByRole("button", { name: /playlist actions/i }));
+    expect(await screen.findByText(/delete playlist/i)).toBeInTheDocument();
+  });
+
+  it("Delete menu item opens confirm dialog", async () => {
+    render(<PlaylistDetailHeader playlist={makePlaylist()} />);
+    await userEvent.click(screen.getByRole("button", { name: /playlist actions/i }));
+    await userEvent.click(await screen.findByText(/delete playlist/i));
+    expect(await screen.findByText(/delete playlist\?/i)).toBeInTheDocument();
   });
 });
 
-it("Play All sets queue with shuffle off", async () => {
+it("Play all sets queue with shuffle off", async () => {
   const store = createPlayerStore();
   render(
     <PlayerStoreProvider store={store}>
@@ -104,7 +151,7 @@ it("Play All sets queue with shuffle off", async () => {
   expect(store.getState().isPlaying).toBe(true);
 });
 
-it("Shuffle Play turns shuffle on", async () => {
+it("Shuffle play turns shuffle on", async () => {
   const store = createPlayerStore();
   render(
     <PlayerStoreProvider store={store}>

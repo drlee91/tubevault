@@ -78,7 +78,10 @@ export class SyncService {
           this.d.itemRepo.upsertActive(playlistId, videoId, pos);
           if (item.inferredStatus !== "available") stats.unavailable++;
           if (added.includes(item.externalId) && item.inferredStatus === "available") {
-            enqueueQueue.push({ videoId, kind: playlist.defaultFormat });
+            // Dual-format policy: every item gets both an audio and a video file.
+            // playlist.defaultFormat is a playback preference only.
+            enqueueQueue.push({ videoId, kind: "audio" });
+            enqueueQueue.push({ videoId, kind: "video" });
           }
         }
         for (const externalId of removed) {
@@ -115,28 +118,27 @@ export class SyncService {
   }
 
   /**
-   * Queue downloads for every playlist item that has no media file in the
-   * playlist's default format yet. Sync only auto-downloads items that are
-   * NEW since the previous run, so items whose downloads failed (or never
-   * ran) would otherwise stay undownloaded forever.
+   * Queue downloads for every missing kind of every playlist item (dual-format
+   * policy: each item should have both an MP3 and an MP4). Sync only
+   * auto-downloads items that are NEW since the previous run, so items whose
+   * downloads failed (or never ran) would otherwise stay incomplete forever.
    */
   async downloadMissing(playlistId: number): Promise<{ queued: number }> {
     const playlist = this.d.playlistRepo.byId(playlistId);
     if (!playlist) throw new Error(`playlist ${playlistId} not found`);
-    const kind = playlist.defaultFormat;
     const items = this.d.itemRepo.listWithJoinsForDetail(playlistId);
     let queued = 0;
     for (const item of items) {
       if (!item.inPlaylist) continue;
       const status = item.video.availabilityStatus;
       if (status !== "available" && status !== "unknown") continue;
-      if (kind === "audio" ? item.audioFile : item.videoFile) continue;
-      const job = item.pendingJob;
-      if (job && job.type === "download_video" && (job.status === "queued" || job.status === "running")) {
-        continue; // already on its way
+      for (const kind of ["audio", "video"] as const) {
+        if (kind === "audio" ? item.audioFile : item.videoFile) continue;
+        const job = item.pendingJobs[kind];
+        if (job && (job.status === "queued" || job.status === "running")) continue;
+        await this.d.queue.enqueue("download_video", { videoId: item.video.id, kind }, { priority: 5 });
+        queued++;
       }
-      await this.d.queue.enqueue("download_video", { videoId: item.video.id, kind }, { priority: 5 });
-      queued++;
     }
     return { queued };
   }

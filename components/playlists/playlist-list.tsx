@@ -14,7 +14,7 @@ export function PlaylistList({ items }: { items: PlaylistStatsRow[] }) {
     );
   }
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
       {items.map((p) => <PlaylistCard key={p.id} p={p} />)}
     </div>
   );

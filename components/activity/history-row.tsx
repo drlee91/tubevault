@@ -39,7 +39,7 @@ export function HistoryRow({ run }: { run: SyncRunRow }) {
   }
 
   return (
-    <div className="rounded-md border border-[var(--color-border)]">
+    <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-muted-bg)]">
       <div
         role="button"
         tabIndex={0}
@@ -48,7 +48,7 @@ export function HistoryRow({ run }: { run: SyncRunRow }) {
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") toggle();
         }}
-        className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-[var(--color-muted-bg)] cursor-pointer"
+        className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-[var(--color-bg)] cursor-pointer rounded-lg transition-colors"
       >
         {open ? (
           <ChevronDown className="h-4 w-4 shrink-0" />
@@ -63,15 +63,15 @@ export function HistoryRow({ run }: { run: SyncRunRow }) {
         >
           {run.playlistTitle}
         </Link>
-        <span className="text-xs text-[var(--color-muted)]">
+        <span className="text-xs text-[var(--color-fg-muted)]">
           +{run.videosAdded} −{run.videosRemoved} ⛔{run.videosUnavailable} ⬇{run.videosDownloaded}
         </span>
-        <span className="ml-auto text-xs text-[var(--color-muted)]">
+        <span className="ml-auto text-xs text-[var(--color-fg-muted)]">
           <RelativeTime iso={run.finishedAt ?? run.startedAt} /> · {run.triggeredBy}
         </span>
       </div>
       {open && hasErrors && (
-        <pre className="overflow-auto border-t border-[var(--color-border)] bg-[var(--color-muted-bg)] p-3 font-mono text-xs">
+        <pre className="overflow-auto border-t border-[var(--color-line)] bg-[var(--color-muted-bg)] p-3 font-mono text-xs">
           {JSON.stringify(errorLog, null, 2)}
         </pre>
       )}

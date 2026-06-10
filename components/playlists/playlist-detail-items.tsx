@@ -19,7 +19,7 @@ export function PlaylistDetailItems({
   return (
     <div className="space-y-4">
       <ItemFilterChips />
-      <TrackTable items={data.items} defaultFormat={data.playlist.defaultFormat} />
+      <TrackTable items={data.items} defaultFormat={data.playlist.defaultFormat} onMutate={() => mutate()} />
     </div>
   );
 }

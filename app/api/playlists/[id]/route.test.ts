@@ -31,7 +31,7 @@ describe("GET /api/playlists/[id]", () => {
       // Seed playlist item
       ctx.itemRepo.upsertActive(playlistId, videoId, 0);
 
-      // Seed a queued download_video job for the video
+      // Seed a queued download_video job for the video (audio kind)
       await ctx.queue.enqueue("download_video", { videoId, kind: "audio" });
 
       // Seed a sync run
@@ -47,7 +47,7 @@ describe("GET /api/playlists/[id]", () => {
       const body = await res.json();
       expect(body.playlist.stats.totalItems).toBe(1);
       expect(body.items[0].video.title).toBeDefined();
-      expect(body.items[0].pendingJob?.type).toBe("download_video");
+      expect(body.items[0].pendingJobs.audio).not.toBeNull();
       expect(body.recentSyncRuns).toBeInstanceOf(Array);
     } finally {
       __setBootContextForTesting(null);

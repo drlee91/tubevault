@@ -34,7 +34,7 @@ export function SelfCheckBanner() {
         </CardHeader>
         <CardContent>
           <Badge tone="error">unreachable</Badge>
-          <p className="mt-2 text-sm text-[var(--color-muted)]">{error}</p>
+          <p className="mt-2 text-sm text-[var(--color-fg-muted)]">{error}</p>
         </CardContent>
       </Card>
     );
@@ -63,16 +63,16 @@ export function SelfCheckBanner() {
         <dl className="grid grid-cols-[8rem_auto_1fr] items-center gap-x-3 gap-y-2 text-sm">
           {data.checks.map((c) => (
             <div key={c.name} className="contents">
-              <dt className="font-mono text-xs text-[var(--color-muted)]">{c.name}</dt>
+              <dt className="font-mono text-xs text-[var(--color-fg-muted)]">{c.name}</dt>
               <dd>
                 <Badge tone={c.status}>{c.status}</Badge>
               </dd>
               <dd className="flex items-center justify-between gap-3">
-                <span className="truncate text-xs text-[var(--color-muted)]">{c.detail}</span>
+                <span className="truncate text-xs text-[var(--color-fg-muted)]">{c.detail}</span>
                 {c.status !== "ok" && tabFor(c.name) && (
                   <Link
                     href={`/settings?tab=${tabFor(c.name)}`}
-                    className="shrink-0 text-xs underline-offset-2 hover:underline text-[var(--color-muted)]"
+                    className="shrink-0 text-xs underline-offset-2 hover:underline text-[var(--color-fg-muted)]"
                   >
                     Configure
                   </Link>

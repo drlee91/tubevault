@@ -15,17 +15,17 @@ export function ItemFilterChips() {
     router.replace(`?${next.toString()}`);
   }
   return (
-    <div role="group" aria-label="Filter items" className="flex gap-2">
+    <div role="group" aria-label="Filter items" className="inline-flex rounded-lg border border-[var(--color-line)] p-0.5">
       {FILTERS.map((f) => (
         <button
           key={f}
           type="button"
           aria-pressed={current === f}
           onClick={() => set(f)}
-          className={`rounded-md px-3 py-1 text-xs ${
+          className={`rounded-md px-3 py-1 text-xs transition-colors ${
             current === f
-              ? "bg-[var(--color-fg)] text-[var(--color-bg)]"
-              : "bg-[var(--color-muted-bg)] text-[var(--color-muted)] hover:text-[var(--color-fg)]"
+              ? "bg-[var(--color-surface-2)] text-[var(--color-fg)]"
+              : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
           }`}
         >
           {f}

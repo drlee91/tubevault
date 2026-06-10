@@ -63,7 +63,7 @@ describe("DownloadVideoHandler", () => {
     const r = await h.handle(fakeJob({ videoId: 1, kind: "audio" }, "download_video"));
     expect(r.success).toBe(false);
     expect(r.transient).toBe(false);
-    expect(videoRepo.setAvailability).toHaveBeenCalled();
+    expect(videoRepo.setAvailability).toHaveBeenCalledWith(1, "removed", "removed");
   });
 });
 

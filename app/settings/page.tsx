@@ -31,7 +31,7 @@ export default async function SettingsPage() {
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       <header>
         <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
+        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
           Configure storage paths, formats, sync schedule and external tools.
         </p>
       </header>

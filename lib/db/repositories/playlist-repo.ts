@@ -23,6 +23,7 @@ export interface PlaylistStatsRow {
     downloadedItems: number;
   };
   activeSyncRunId: number | null;
+  coverThumbs: string[];
 }
 
 export interface CreatePlaylistInput {
@@ -35,6 +36,16 @@ export interface CreatePlaylistInput {
 }
 
 export type PlaylistRow = typeof playlists.$inferSelect;
+
+function parseCoverThumbs(raw: unknown): string[] {
+  if (typeof raw !== "string") return [];
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 export class PlaylistRepo {
   constructor(private readonly db: BetterSQLite3Database<typeof schema>) {}
@@ -110,6 +121,7 @@ export class PlaylistRepo {
         downloadedItems: Number(row["downloaded_items"]),
       },
       activeSyncRunId: row["active_sync_run_id"] != null ? Number(row["active_sync_run_id"]) : null,
+      coverThumbs: parseCoverThumbs(row["cover_thumbs"]),
     };
   }
 
@@ -124,10 +136,17 @@ export class PlaylistRepo {
         (SELECT COUNT(*) FROM playlist_items pi
            JOIN videos v ON v.id = pi.video_id
            WHERE pi.playlist_id = p.id AND pi.in_playlist = 1 AND v.availability_status != 'available') AS unavailable_items,
-        (SELECT COUNT(DISTINCT mf.video_id) FROM media_files mf
-           JOIN playlist_items pi ON pi.video_id = mf.video_id
-           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1) AS downloaded_items,
-        (SELECT id FROM sync_runs sr WHERE sr.playlist_id = p.id AND sr.status = 'running' LIMIT 1) AS active_sync_run_id
+        (SELECT COUNT(*) FROM playlist_items pi
+           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1
+             AND EXISTS (SELECT 1 FROM media_files ma WHERE ma.video_id = pi.video_id AND ma.kind = 'audio')
+             AND EXISTS (SELECT 1 FROM media_files mv WHERE mv.video_id = pi.video_id AND mv.kind = 'video')) AS downloaded_items,
+        (SELECT id FROM sync_runs sr WHERE sr.playlist_id = p.id AND sr.status = 'running' LIMIT 1) AS active_sync_run_id,
+        (SELECT json_group_array(t.thumbnail_url) FROM (
+           SELECT v.thumbnail_url FROM playlist_items pi
+           JOIN videos v ON v.id = pi.video_id
+           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1 AND v.thumbnail_url IS NOT NULL
+           ORDER BY pi.position LIMIT 4
+        ) t) AS cover_thumbs
       FROM playlists p
       ORDER BY p.created_at DESC
     `) as Record<string, unknown>[];
@@ -145,10 +164,17 @@ export class PlaylistRepo {
         (SELECT COUNT(*) FROM playlist_items pi
            JOIN videos v ON v.id = pi.video_id
            WHERE pi.playlist_id = p.id AND pi.in_playlist = 1 AND v.availability_status != 'available') AS unavailable_items,
-        (SELECT COUNT(DISTINCT mf.video_id) FROM media_files mf
-           JOIN playlist_items pi ON pi.video_id = mf.video_id
-           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1) AS downloaded_items,
-        (SELECT id FROM sync_runs sr WHERE sr.playlist_id = p.id AND sr.status = 'running' LIMIT 1) AS active_sync_run_id
+        (SELECT COUNT(*) FROM playlist_items pi
+           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1
+             AND EXISTS (SELECT 1 FROM media_files ma WHERE ma.video_id = pi.video_id AND ma.kind = 'audio')
+             AND EXISTS (SELECT 1 FROM media_files mv WHERE mv.video_id = pi.video_id AND mv.kind = 'video')) AS downloaded_items,
+        (SELECT id FROM sync_runs sr WHERE sr.playlist_id = p.id AND sr.status = 'running' LIMIT 1) AS active_sync_run_id,
+        (SELECT json_group_array(t.thumbnail_url) FROM (
+           SELECT v.thumbnail_url FROM playlist_items pi
+           JOIN videos v ON v.id = pi.video_id
+           WHERE pi.playlist_id = p.id AND pi.in_playlist = 1 AND v.thumbnail_url IS NOT NULL
+           ORDER BY pi.position LIMIT 4
+        ) t) AS cover_thumbs
       FROM playlists p
       WHERE p.id = ${id}
     `) as Record<string, unknown>[];

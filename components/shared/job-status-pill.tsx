@@ -22,13 +22,12 @@ const map: Record<JobStatus, { label: string; icon: LucideIcon; classes: string;
   queued: {
     label: "queued",
     icon: Clock,
-    classes: "bg-[var(--color-muted-bg)] text-[var(--color-muted)]",
+    classes: "bg-[var(--color-muted-bg)] text-[var(--color-fg-muted)]",
   },
   running: {
     label: "running",
     icon: Loader2,
-    classes:
-      "bg-[var(--color-status-bg-available)] text-[var(--color-status-available)]",
+    classes: "bg-[var(--color-muted-bg)] text-[var(--color-fg-muted)]",
     spin: true,
   },
   completed: {
@@ -45,7 +44,7 @@ const map: Record<JobStatus, { label: string; icon: LucideIcon; classes: string;
   cancelled: {
     label: "cancelled",
     icon: XCircle,
-    classes: "bg-[var(--color-muted-bg)] text-[var(--color-muted)]",
+    classes: "bg-[var(--color-muted-bg)] text-[var(--color-fg-muted)]",
   },
   partial: {
     label: "partial",

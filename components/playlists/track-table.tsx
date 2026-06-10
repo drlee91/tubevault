@@ -9,9 +9,9 @@ import { usePlayerStore, usePlayerStoreApi } from "@/lib/client/use-player-store
 import { fromPlaylistDetailItems } from "@/lib/player/queue-from-items";
 import { buildQueue } from "@/lib/player/queue-build";
 
-interface Props { items: PlaylistDetailItem[]; defaultFormat: "audio" | "video"; }
+interface Props { items: PlaylistDetailItem[]; defaultFormat: "audio" | "video"; onMutate?: () => void; }
 
-export function TrackTable({ items, defaultFormat }: Props) {
+export function TrackTable({ items, defaultFormat, onMutate }: Props) {
   const sp = useSearchParams();
   const filter = sp.get("filter") ?? "all";
   const [q, setQ] = useState("");
@@ -57,11 +57,12 @@ export function TrackTable({ items, defaultFormat }: Props) {
             isCurrent={currentVideoId === it.video.id}
             isPlaying={currentVideoId === it.video.id && isPlaying}
             defaultFormat={defaultFormat}
+            onMutate={onMutate}
           />
         ))}
       </div>
       {filtered.length === 0 && (
-        <p className="py-8 text-center text-sm text-[var(--color-muted)]">No items match.</p>
+        <p className="py-8 text-center text-sm text-[var(--color-fg-muted)]">No items match.</p>
       )}
     </div>
   );

@@ -7,10 +7,10 @@ import { downloadMissingAction } from "@/lib/actions/playlist-actions";
 
 export function DownloadMissingButton({
   playlistId,
-  defaultFormat,
+  variant = "button",
 }: {
   playlistId: number;
-  defaultFormat: "audio" | "video";
+  variant?: "button" | "link";
 }) {
   const [pending, start] = useTransition();
   function onClick() {
@@ -19,12 +19,26 @@ export function DownloadMissingButton({
       if (!r.ok) {
         toast.error("Download failed", { description: r.error.message });
       } else if (r.data.queued === 0) {
-        toast.info("Nothing to download — every item already has a file");
+        toast.info("Nothing to queue — missing files are already downloading or complete");
       } else {
-        toast.success(`${r.data.queued} downloads queued (${defaultFormat})`);
+        toast.success(`${r.data.queued} downloads queued`);
       }
     });
   }
+
+  if (variant === "link") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={pending}
+        className="text-[var(--color-brand)] hover:underline disabled:opacity-50"
+      >
+        Fehlende laden
+      </button>
+    );
+  }
+
   return (
     <Button
       onClick={onClick}
@@ -32,7 +46,7 @@ export function DownloadMissingButton({
       size="sm"
       variant="outline"
       className="gap-2"
-      title={`Queue a ${defaultFormat} download for every item without a local file`}
+      title="Queue audio + video downloads for every item with missing files"
     >
       <Download className={pending ? "h-4 w-4 animate-pulse" : "h-4 w-4"} />
       Download missing

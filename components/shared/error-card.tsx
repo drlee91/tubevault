@@ -17,7 +17,7 @@ export function ErrorCard({ title, message, onRetry }: Props) {
         <AlertCircle className="mt-0.5 h-5 w-5 text-[var(--color-status-removed)]" aria-hidden />
         <div className="flex-1">
           <h3 className="text-sm font-medium">{title}</h3>
-          {message && <p className="mt-1 text-sm text-[var(--color-muted)]">{message}</p>}
+          {message && <p className="mt-1 text-sm text-[var(--color-fg-muted)]">{message}</p>}
         </div>
         {onRetry && (
           <Button variant="outline" size="sm" onClick={onRetry}>

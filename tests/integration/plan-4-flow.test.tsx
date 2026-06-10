@@ -21,7 +21,8 @@ function item(id: number): PlaylistDetailItem {
       durationSeconds: 60, thumbnailUrl: null, availabilityStatus: "available", availabilityReason: null,
     },
     audioFile: { id: id * 10, format: "mp3", quality: "192", fileSizeBytes: 1, downloadedAt: "x" },
-    videoFile: null, pendingJob: null,
+    videoFile: null,
+    pendingJobs: { audio: null, video: null },
     availableKinds: ["audio"],
   };
 }

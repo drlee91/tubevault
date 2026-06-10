@@ -12,7 +12,7 @@ function HeaderSkeleton({ titleWidth = "12rem", subtitleWidth }: { titleWidth?: 
 
 function TabBarSkeleton({ count = 2 }: { count?: number }) {
   return (
-    <div className="flex gap-2 border-b border-[var(--color-border)]">
+    <div className="flex gap-2 border-b border-[var(--color-line)]">
       {Array.from({ length: count }).map((_, i) => (
         <Skeleton key={i} className="h-9 w-24" />
       ))}
@@ -61,7 +61,7 @@ export function SettingsPageSkeleton() {
 export function PlaylistDetailPageSkeleton() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6" role="status" aria-label="Loading playlist">
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-border)] pb-4">
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-line)] pb-4">
         <div className="min-w-0 flex-1 space-y-2">
           <Skeleton className="h-8 w-[60%]" />
           <Skeleton className="h-4 w-[40%]" />

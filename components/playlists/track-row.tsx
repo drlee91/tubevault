@@ -1,14 +1,13 @@
 "use client";
 
-import { Music, Film } from "lucide-react";
-import { JobStatusPill } from "@/components/shared/job-status-pill";
-import { StatusPill, type AvailabilityStatus } from "@/components/shared/status-pill";
+import { Play } from "lucide-react";
 import { Duration } from "@/components/shared/duration";
-import { RelativeTime } from "@/components/shared/relative-time";
 import { TrackContextMenu } from "./track-context-menu";
 import { NowPlayingIndicator } from "@/components/player/now-playing-indicator";
-import type { PlaylistDetailItem } from "@/lib/db/repositories/playlist-item-repo";
+import { DownloadDuo, type DuoSlot } from "./download-duo";
+import type { PlaylistDetailItem, PendingKindJob } from "@/lib/db/repositories/playlist-item-repo";
 import { fromPlaylistDetailItems } from "@/lib/player/queue-from-items";
+import { cn } from "@/lib/utils";
 
 interface Props {
   item: PlaylistDetailItem;
@@ -17,9 +16,20 @@ interface Props {
   isCurrent?: boolean;
   isPlaying?: boolean;
   defaultFormat?: "audio" | "video";
+  onMutate?: () => void;
 }
 
-export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, defaultFormat = "audio" }: Props) {
+function slotFor(
+  file: { format: string; fileSizeBytes: number } | null,
+  job: PendingKindJob | null,
+): DuoSlot {
+  if (file) return { state: "present", format: file.format, sizeBytes: file.fileSizeBytes };
+  if (job && (job.status === "queued" || job.status === "running")) return { state: "pending", status: job.status };
+  if (job && job.status === "failed") return { state: "failed", jobId: job.id };
+  return { state: "missing" };
+}
+
+export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, defaultFormat = "audio", onMutate }: Props) {
   const youtubeUrl = `https://www.youtube.com/watch?v=${item.video.externalId}`;
   const queueItem = fromPlaylistDetailItems([item], defaultFormat)[0];
   const status = item.video.availabilityStatus;
@@ -27,55 +37,48 @@ export function TrackRow({ item, position, onPlay, isCurrent, isPlaying, default
     ...(item.audioFile ? (["audio"] as const) : []),
     ...(item.videoFile ? (["video"] as const) : []),
   ];
+  const unavailable = status !== "available" && status !== "unknown";
   return (
-    <div className="flex h-12 items-center gap-3 rounded-md px-2 hover:bg-[var(--color-muted-bg)]">
+    <div className={cn(
+      "group flex h-16 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-[var(--color-muted-bg)]",
+      unavailable && "opacity-60",
+    )}>
+      <div className="flex w-8 shrink-0 items-center justify-end text-xs tabular-nums text-[var(--color-fg-muted)]">
+        {isCurrent ? <NowPlayingIndicator isPlaying={!!isPlaying} /> : position + 1}
+      </div>
+      {/* thumbnail with hover play overlay */}
       <button
         type="button"
         aria-label={`Play ${item.video.title}`}
         onClick={onPlay}
-        className="flex w-8 shrink-0 items-center justify-end text-xs text-[var(--color-muted)] tabular-nums"
+        className="relative h-12 w-[85px] shrink-0 overflow-hidden rounded-md bg-[var(--color-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
       >
-        {isCurrent ? <NowPlayingIndicator isPlaying={!!isPlaying} /> : position + 1}
+        {item.video.thumbnailUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.video.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+        )}
+        <span className="absolute inset-0 grid place-items-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+          <Play className="h-5 w-5 text-white" />
+        </span>
       </button>
-      {item.video.thumbnailUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.video.thumbnailUrl}
-          alt=""
-          className="h-9 w-12 shrink-0 rounded object-cover"
-        />
-      ) : (
-        <div className="h-9 w-12 shrink-0 rounded bg-[var(--color-muted-bg)]" />
-      )}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{item.video.title}</div>
-        <div className="truncate text-xs text-[var(--color-muted)]">{item.video.channelTitle}</div>
+        <div className="truncate text-sm font-medium">
+          {item.video.title}
+          {/* The status pill is gone from rows; dimming alone is invisible to
+              assistive tech, so name the problem for screen readers. */}
+          {unavailable && <span className="sr-only"> ({status})</span>}
+        </div>
+        <div className="truncate text-xs text-[var(--color-fg-muted)]">{item.video.channelTitle}</div>
       </div>
-      <div className="hidden w-16 text-right text-xs text-[var(--color-muted)] tabular-nums md:block">
+      <DownloadDuo
+        videoId={item.video.id}
+        canDownload={status === "available" || status === "unknown"}
+        audio={slotFor(item.audioFile, item.pendingJobs.audio)}
+        video={slotFor(item.videoFile, item.pendingJobs.video)}
+        onMutate={onMutate}
+      />
+      <div className="hidden w-14 text-right font-mono text-xs tabular-nums text-[var(--color-fg-muted)] md:block">
         <Duration seconds={item.video.durationSeconds} />
-      </div>
-      <div className="hidden w-20 text-right text-xs text-[var(--color-muted)] md:block">
-        <RelativeTime iso={item.addedAt} />
-      </div>
-      {/* Downloaded media on disk — one icon per kind, empty when nothing is local. */}
-      <div className="flex w-12 shrink-0 items-center justify-end gap-1 text-[var(--color-status-available)]">
-        {item.audioFile && (
-          <span title={`audio downloaded (${item.audioFile.format})`}>
-            <Music className="h-3.5 w-3.5" aria-label="audio downloaded" />
-          </span>
-        )}
-        {item.videoFile && (
-          <span title={`video downloaded (${item.videoFile.format})`}>
-            <Film className="h-3.5 w-3.5" aria-label="video downloaded" />
-          </span>
-        )}
-      </div>
-      <div className="w-32 text-right">
-        {item.pendingJob ? (
-          <JobStatusPill status={item.pendingJob.status as Parameters<typeof JobStatusPill>[0]["status"]} />
-        ) : (
-          <StatusPill status={status as AvailabilityStatus} />
-        )}
       </div>
       <TrackContextMenu
         videoId={item.video.id}

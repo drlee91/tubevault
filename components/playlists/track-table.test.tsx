@@ -66,7 +66,7 @@ function makeItem(
     },
     audioFile: null,
     videoFile: null,
-    pendingJob: null,
+    pendingJobs: { audio: null, video: null },
     availableKinds,
   };
 }

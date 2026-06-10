@@ -22,7 +22,7 @@ export function GeneralSection() {
     <section className="space-y-4">
       <div>
         <h2 className="text-base font-medium">General</h2>
-        <p className="text-sm text-[var(--color-muted)]">App-wide preferences.</p>
+        <p className="text-sm text-[var(--color-fg-muted)]">App-wide preferences.</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="theme-select">Theme</Label>

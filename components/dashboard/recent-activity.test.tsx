@@ -29,24 +29,28 @@ describe("RecentActivity", () => {
     expect(link).toHaveAttribute("href", "/playlists/42");
   });
 
-  it("renders JobStatusPill for success status (shows completed)", () => {
-    render(<RecentActivity items={[makeItem({ status: "success" })]} />);
-    expect(screen.getByText("completed")).toBeInTheDocument();
+  it("renders Check icon for success status", () => {
+    const { container } = render(<RecentActivity items={[makeItem({ status: "success" })]} />);
+    expect(container.querySelector(".lucide-check")).toBeInTheDocument();
+    expect(container.querySelector(".text-\\[var\\(--color-ok\\)\\]")).toBeInTheDocument();
   });
 
-  it("renders JobStatusPill for failed status", () => {
-    render(<RecentActivity items={[makeItem({ status: "failed" })]} />);
-    expect(screen.getByText("failed")).toBeInTheDocument();
+  it("renders X icon for failed status", () => {
+    const { container } = render(<RecentActivity items={[makeItem({ status: "failed" })]} />);
+    expect(container.querySelector(".lucide-x")).toBeInTheDocument();
+    expect(container.querySelector(".text-\\[var\\(--color-danger\\)\\]")).toBeInTheDocument();
   });
 
-  it("renders JobStatusPill for running status", () => {
-    render(<RecentActivity items={[makeItem({ status: "running" })]} />);
-    expect(screen.getByText("running")).toBeInTheDocument();
+  it("renders Loader2 icon for running status", () => {
+    const { container } = render(<RecentActivity items={[makeItem({ status: "running" })]} />);
+    expect(container.querySelector(".lucide-loader-circle")).toBeInTheDocument();
+    expect(container.querySelector(".animate-spin")).toBeInTheDocument();
   });
 
-  it("renders JobStatusPill for partial status (shows partial)", () => {
-    render(<RecentActivity items={[makeItem({ status: "partial" })]} />);
-    expect(screen.getByText("partial")).toBeInTheDocument();
+  it("renders warning triangle for partial status (finished with errors)", () => {
+    const { container } = render(<RecentActivity items={[makeItem({ status: "partial" })]} />);
+    expect(container.querySelector(".lucide-triangle-alert")).toBeInTheDocument();
+    expect(container.querySelector(".text-\\[var\\(--color-warn\\)\\]")).toBeInTheDocument();
   });
 
   it("renders orphan item (playlistId null) as non-link", () => {

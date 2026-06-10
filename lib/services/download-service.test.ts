@@ -7,7 +7,8 @@ import { VideoRepo } from "@/lib/db/repositories/video-repo";
 import { MediaFileRepo } from "@/lib/db/repositories/media-file-repo";
 import { ProviderRegistry } from "@/lib/providers/registry";
 import { FakeAdapter } from "@/lib/providers/__tests__/fake-adapter";
-import { DownloadService, type DownloadServiceSettings } from "./download-service";
+import { MediaUnavailableError } from "@/lib/providers/types";
+import { DownloadService, VideoBecameUnavailableError, type DownloadServiceSettings } from "./download-service";
 
 async function tmpdir(): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), "tubevault-dl-"));
@@ -104,6 +105,34 @@ describe("DownloadService", () => {
       expect(rows).toHaveLength(1);
       expect(rows[0]!.filePath).toBe(newPath);
       await expect(fs.access(oldPath)).rejects.toThrow();
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it("re-throws MediaUnavailableError from adapter as VideoBecameUnavailableError with videoId", async () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const videoRepo = new VideoRepo(db);
+      const mediaRepo = new MediaFileRepo(db);
+      const registry = new ProviderRegistry();
+      registry.register(new FakeAdapter({
+        downloadResult: () => { throw new MediaUnavailableError("ext1", "Video unavailable: gone"); },
+      }));
+      const videoId = videoRepo.upsert({
+        provider: "youtube", externalId: "ext1", title: "Gone Video",
+        channelTitle: null, durationSeconds: 60, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      const svc = new DownloadService({
+        videoRepo, mediaRepo, registry,
+        settings: () => ({
+          audioStoragePath: os.tmpdir(), videoStoragePath: os.tmpdir(),
+          useSingleStoragePath: false,
+          defaultAudioFormat: "mp3", defaultAudioBitrate: 192, defaultVideoQuality: "1080p",
+        }),
+      });
+      await expect(svc.download(videoId, "audio")).rejects.toThrow(VideoBecameUnavailableError);
+      await expect(svc.download(videoId, "audio")).rejects.toMatchObject({ videoId });
     } finally {
       sqlite.close();
     }

@@ -29,14 +29,14 @@ export function JobRow({ job, onMutate }: { job: JobsListItem; onMutate: () => v
   }
 
   return (
-    <div className="rounded-md border border-[var(--color-border)] text-sm">
-      <div className="grid grid-cols-[auto_1fr_auto_auto_auto_1fr_auto] items-center gap-3 px-3 py-2">
+    <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-muted-bg)] text-sm">
+      <div className="grid grid-cols-[auto_1fr_auto_auto_auto_1fr_auto] items-center gap-3 px-3 py-2.5">
         <JobTypeBadge type={job.type as JobType} />
-        <span className="truncate">{job.subject?.title ?? <span className="text-[var(--color-muted)]">—</span>}</span>
+        <span className="truncate">{job.subject?.title ?? <span className="text-[var(--color-fg-muted)]">—</span>}</span>
         <JobStatusPill status={job.status as JobStatusPillStatus} />
-        <span className="text-xs text-[var(--color-muted)] tabular-nums">{job.attempts}/{job.maxAttempts}</span>
-        <span className="text-xs text-[var(--color-muted)]"><RelativeTime iso={job.startedAt} /></span>
-        <span className="min-w-0 text-xs text-[var(--color-muted)]">
+        <span className="text-xs text-[var(--color-fg-muted)] tabular-nums">{job.attempts}/{job.maxAttempts}</span>
+        <span className="text-xs text-[var(--color-fg-muted)]"><RelativeTime iso={job.startedAt} /></span>
+        <span className="min-w-0 text-xs text-[var(--color-fg-muted)]">
           {hasError ? (
             <button
               type="button"
@@ -54,7 +54,7 @@ export function JobRow({ job, onMutate }: { job: JobsListItem; onMutate: () => v
           {job.status === "running" && (
             <Tooltip>
               <TooltipTrigger
-                render={<button type="button" disabled className="text-xs text-[var(--color-muted)] underline-offset-2 hover:underline disabled:opacity-50" />}
+                render={<button type="button" disabled className="text-xs text-[var(--color-fg-muted)] underline-offset-2 hover:underline disabled:opacity-50" />}
               >
                 Cancel
               </TooltipTrigger>
@@ -64,19 +64,19 @@ export function JobRow({ job, onMutate }: { job: JobsListItem; onMutate: () => v
         </span>
       </div>
       {open && hasError && (
-        <div className="border-t border-[var(--color-border)] bg-[var(--color-muted-bg)]">
+        <div className="border-t border-[var(--color-line)] bg-[var(--color-muted-bg)]">
           <div className="flex items-center justify-between gap-3 px-3 py-1.5">
-            <span className="text-xs text-[var(--color-muted)]">Error details</span>
+            <span className="text-xs text-[var(--color-fg-muted)]">Error details</span>
             <button
               type="button"
               onClick={copyError}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-fg)]"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-fg-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-fg)]"
             >
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
-          <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words border-t border-[var(--color-border)] px-3 py-2 font-mono text-xs">
+          <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words border-t border-[var(--color-line)] px-3 py-2 font-mono text-xs">
             {job.lastError}
           </pre>
         </div>

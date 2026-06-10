@@ -25,21 +25,21 @@ function Row({ item, index }: { item: QueueItem; index: number }) {
         aria-label="Drag handle"
         {...sortable.attributes}
         {...sortable.listeners}
-        className="cursor-grab text-[var(--color-muted)]"
+        className="cursor-grab text-[var(--color-fg-muted)]"
       >
         <GripVertical className="h-4 w-4" />
       </button>
       {isCurrent ? <NowPlayingIndicator isPlaying={isPlaying} /> : <span className="w-2" />}
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm">{item.title}</div>
-        <div className="truncate text-xs text-[var(--color-muted)]">{item.channelTitle ?? ""}</div>
+        <div className="truncate text-xs text-[var(--color-fg-muted)]">{item.channelTitle ?? ""}</div>
       </div>
       {broken && <AlertTriangle className="h-4 w-4 text-amber-500" aria-label="File missing" />}
       <button
         type="button"
         aria-label="Remove from queue"
         onClick={() => store.getState().removeFromQueue(index)}
-        className="p-1 text-[var(--color-muted)]"
+        className="p-1 text-[var(--color-fg-muted)]"
       >
         <X className="h-4 w-4" />
       </button>
@@ -64,12 +64,12 @@ export function QueueList() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-2">
+      <header className="flex items-center justify-between border-b border-[var(--color-line)] px-3 py-2">
         <h2 className="text-sm font-semibold">Queue · {queue.length} tracks</h2>
         <button
           type="button"
           onClick={() => store.getState().clearQueue()}
-          className="text-xs text-[var(--color-muted)] hover:underline"
+          className="text-xs text-[var(--color-fg-muted)] hover:underline"
         >
           Clear queue
         </button>

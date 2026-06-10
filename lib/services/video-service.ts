@@ -30,7 +30,6 @@ export class VideoNotAvailableError extends Error {
 
 export interface AddStandaloneInput {
   url: string;
-  format: "audio" | "video";
 }
 
 export interface VideoServiceDeps {
@@ -42,7 +41,7 @@ export interface VideoServiceDeps {
 export class VideoService {
   constructor(private readonly d: VideoServiceDeps) {}
 
-  async addStandalone(input: AddStandaloneInput): Promise<{ video: VideoRow; downloadJobId: number }> {
+  async addStandalone(input: AddStandaloneInput): Promise<{ video: VideoRow; downloadJobIds: number[] }> {
     const adapter = this.d.registry.findByUrl(input.url);
     if (!adapter) throw new ProviderUnsupportedError(input.url);
     const parsed = adapter.parseUrl(input.url);
@@ -62,12 +61,13 @@ export class VideoService {
       availabilityReason: meta.availabilityReason,
     });
     const video = this.d.videoRepo.byId(id)!;
-    const downloadJobId = await this.d.queue.enqueue(
-      "download_video",
-      { videoId: id, kind: input.format },
-      { priority: 5 },
-    );
-    return { video, downloadJobId };
+    const downloadJobIds: number[] = [];
+    for (const kind of ["audio", "video"] as const) {
+      downloadJobIds.push(
+        await this.d.queue.enqueue("download_video", { videoId: id, kind }, { priority: 15 }),
+      );
+    }
+    return { video, downloadJobIds };
   }
 
   byId(id: number): VideoRow | null {

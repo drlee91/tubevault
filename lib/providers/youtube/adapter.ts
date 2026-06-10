@@ -8,9 +8,10 @@ import type {
   VideoMetadata,
   VideoStub,
 } from "../types";
+import { MediaUnavailableError } from "../types";
 import { matchesYouTubeUrl, parseYouTubeUrl } from "./url-parser";
 import { mapYouTubeAvailability } from "./status-mapper";
-import { runYtDlp, type ExecFileLike } from "./yt-dlp";
+import { runYtDlp, YtDlpError, type ExecFileLike } from "./yt-dlp";
 
 export interface YouTubeAdapterOptions {
   binary: string;
@@ -152,11 +153,29 @@ export class YouTubeAdapter implements MediaProviderAdapter {
             url,
           ];
 
-    const stdout = await runYtDlp(args, {
-      binary: this.opts.binary,
-      execFile: this.opts.execFile,
-      timeoutMs: this.opts.timeoutMs ?? 5 * 60 * 1000,
-    });
+    const baseTimeout = this.opts.timeoutMs ?? 5 * 60 * 1000;
+    // Long media takes long: allow 250ms per media-second on top of the base.
+    const timeoutMs = baseTimeout + (opts.durationSeconds ?? 0) * 250;
+
+    let stdout: string;
+    try {
+      stdout = await runYtDlp(args, {
+        binary: this.opts.binary,
+        execFile: this.opts.execFile,
+        timeoutMs,
+      });
+    } catch (e) {
+      if (e instanceof YtDlpError) {
+        // Combine the error message and stderr so we catch both styles of
+        // yt-dlp output (some patterns appear in the exception message that
+        // wraps stderr, others surface only in the raw stderr field).
+        const combined = `${e.message} ${e.stderr}`;
+        if (UNAVAILABLE_RE.test(combined)) {
+          throw new MediaUnavailableError(externalId, combined.trim());
+        }
+      }
+      throw e;
+    }
 
     // Prefer the explicit FINAL_TAG line. Fall back to the LAST `Destination:`
     // line (intermediate streams come first; the merged output is last) and
@@ -226,6 +245,14 @@ export class YouTubeAdapter implements MediaProviderAdapter {
     }
   }
 }
+
+/**
+ * Matches all known yt-dlp error strings that indicate a video is permanently
+ * gone (deleted, private, account terminated, geo-blocked, etc.). Case-
+ * insensitive; tested against the combined exception message + stderr.
+ */
+const UNAVAILABLE_RE =
+  /Video unavailable|This video is not available|Private video|This video has been removed|account associated with this video has been terminated/i;
 
 interface StatLike {
   stat(path: string): Promise<{ size: number }>;

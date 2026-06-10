@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { YouTubeAdapter } from "./adapter";
+import { MediaUnavailableError } from "../types";
 import type { ExecFileLike } from "./yt-dlp";
 
 async function fixture(name: string): Promise<string> {
@@ -87,6 +88,93 @@ describe("YouTubeAdapter.checkAvailability", () => {
     });
     const probe = await a.checkAvailability("xyz");
     expect(probe.status).toBe("removed");
+  });
+});
+
+describe("YouTubeAdapter.download — unavailability detection", () => {
+  const unavailableCases: Array<[string, string]> = [
+    ["Video unavailable", "ERROR: [youtube] U60ATEiY1uI: Video unavailable. This video is not available"],
+    ["Private video", "ERROR: [youtube] abc123: Private video"],
+    ["This video has been removed", "ERROR: [youtube] abc456: This video has been removed by the uploader"],
+    ["account terminated", "ERROR: [youtube] xyz789: The account associated with this video has been terminated"],
+    ["This video is not available", "ERROR: [youtube] def000: This video is not available"],
+  ];
+
+  for (const [label, errorMsg] of unavailableCases) {
+    it(`throws MediaUnavailableError when yt-dlp stderr contains "${label}"`, async () => {
+      const exec: ExecFileLike = (_f, _a, _o, cb) =>
+        cb(Object.assign(new Error(errorMsg), { code: 1 }), "", errorMsg);
+      const a = new YouTubeAdapter({ binary: "yt-dlp", execFile: exec });
+      await expect(
+        a.download("U60ATEiY1uI", {
+          kind: "audio",
+          audioFormat: "mp3",
+          audioBitrate: 192,
+          outputDir: os.tmpdir(),
+          filenameStem: "test-stem",
+        }),
+      ).rejects.toThrow(MediaUnavailableError);
+    });
+  }
+
+  it("does NOT throw MediaUnavailableError for a generic network error", async () => {
+    const exec: ExecFileLike = (_f, _a, _o, cb) =>
+      cb(Object.assign(new Error("HTTP Error 503: Service Unavailable"), { code: 1 }), "", "HTTP Error 503: Service Unavailable");
+    const a = new YouTubeAdapter({ binary: "yt-dlp", execFile: exec });
+    await expect(
+      a.download("abc999", {
+        kind: "audio",
+        audioFormat: "mp3",
+        audioBitrate: 192,
+        outputDir: os.tmpdir(),
+        filenameStem: "test-stem",
+      }),
+    ).rejects.not.toThrow(MediaUnavailableError);
+  });
+});
+
+describe("YouTubeAdapter.download — timeout scaling", () => {
+  it("uses base timeout (5 min) when durationSeconds is omitted", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "tubevault-"));
+    const audioPath = path.join(tmp, "track.mp3");
+    await fs.writeFile(audioPath, Buffer.alloc(1024));
+
+    let capturedTimeout: number | undefined;
+    const exec: ExecFileLike = (_f, _a, opts, cb) => {
+      capturedTimeout = opts.timeout;
+      cb(null, "[ffmpeg] Destination: " + audioPath + "\n", "");
+    };
+    const a = new YouTubeAdapter({ binary: "yt-dlp", execFile: exec });
+    await a.download("abc111", {
+      kind: "audio",
+      audioFormat: "mp3",
+      audioBitrate: 192,
+      outputDir: tmp,
+      filenameStem: "track",
+    });
+    expect(capturedTimeout).toBe(5 * 60 * 1000);
+  });
+
+  it("adds 250ms per media-second to base timeout for long videos", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "tubevault-"));
+    const audioPath = path.join(tmp, "track.mp3");
+    await fs.writeFile(audioPath, Buffer.alloc(1024));
+
+    let capturedTimeout: number | undefined;
+    const exec: ExecFileLike = (_f, _a, opts, cb) => {
+      capturedTimeout = opts.timeout;
+      cb(null, "[ffmpeg] Destination: " + audioPath + "\n", "");
+    };
+    const a = new YouTubeAdapter({ binary: "yt-dlp", execFile: exec });
+    await a.download("abc111", {
+      kind: "audio",
+      audioFormat: "mp3",
+      audioBitrate: 192,
+      outputDir: tmp,
+      filenameStem: "track",
+      durationSeconds: 36171,
+    });
+    expect(capturedTimeout).toBe(5 * 60 * 1000 + 36171 * 250);
   });
 });
 

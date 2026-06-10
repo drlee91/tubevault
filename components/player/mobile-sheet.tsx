@@ -14,7 +14,7 @@ export function MobilePlayerSheet() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-14 z-10 flex h-14 items-center gap-2 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-3 md:hidden">
+      <div className="fixed inset-x-0 bottom-14 z-10 flex h-14 items-center gap-2 border-t border-[var(--color-line)] bg-[var(--color-bg)] px-3 md:hidden">
         <button
           type="button"
           aria-label="Open player"
@@ -32,7 +32,7 @@ export function MobilePlayerSheet() {
         <button
           aria-label={isPlaying ? "Pause" : "Resume"}
           onClick={(e) => { e.stopPropagation(); store.getState().togglePlay(); }}
-          className="rounded-full bg-[var(--color-fg)] p-2 text-[var(--color-bg)]"
+          className="rounded-full bg-[var(--color-brand)] p-2 text-[var(--color-brand-fg)]"
         >
           {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </button>

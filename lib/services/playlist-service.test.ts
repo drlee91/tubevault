@@ -136,7 +136,8 @@ describe("listWithStats", () => {
       ctx.itemRepo.upsertActive(playlistId, v1, 0);
       ctx.itemRepo.upsertActive(playlistId, v2, 1);
 
-      // Seed one media_file (audio) for v1 only — so downloadedItems = 1
+      // Seed both audio + video for v1 only — so downloadedItems = 1 (both-kind policy).
+      // v2 has no files and must not count.
       ctx.mediaFileRepo.insert({
         videoId: v1,
         kind: "audio",
@@ -144,6 +145,15 @@ describe("listWithStats", () => {
         format: "mp3",
         quality: "192",
         fileSizeBytes: 1024,
+        durationSeconds: 120,
+      });
+      ctx.mediaFileRepo.insert({
+        videoId: v1,
+        kind: "video",
+        filePath: "/tmp/v1.mp4",
+        format: "mp4",
+        quality: "720p",
+        fileSizeBytes: 2048,
         durationSeconds: 120,
       });
 
@@ -176,7 +186,7 @@ describe("getDetailFull", () => {
     }
   });
 
-  it("returns playlist with items joined to videos, files, pendingJob", async () => {
+  it("returns playlist with items joined to videos, files, pendingJobs", async () => {
     const ctx = await createTestBootContext();
     try {
       // Seed playlist
@@ -212,10 +222,10 @@ describe("getDetailFull", () => {
         durationSeconds: 300,
       });
 
-      // Seed a queued download_video job with matching videoId in payload
+      // Seed a queued download_video job (audio kind) with matching videoId in payload
       ctx.jobRepo.insert({
         type: "download_video",
-        payload: { videoId },
+        payload: { videoId, kind: "audio" },
         priority: 0,
       });
 
@@ -229,14 +239,14 @@ describe("getDetailFull", () => {
       expect(detail!.items[0]!.video.title).toBe("Detail Video");
       expect(detail!.items[0]!.audioFile?.id).toBe(audioFileId);
       expect(detail!.items[0]!.videoFile).toBeNull();
-      expect(detail!.items[0]!.pendingJob?.type).toBe("download_video");
+      expect(detail!.items[0]!.pendingJobs.audio).not.toBeNull();
       expect(detail!.recentSyncRuns).toHaveLength(1);
     } finally {
       ctx.cleanup();
     }
   });
 
-  it("returns null audioFile/videoFile/pendingJob when none present", async () => {
+  it("returns null audioFile/videoFile/pendingJobs when none present", async () => {
     const ctx = await createTestBootContext();
     try {
       const playlistId = ctx.playlistRepo.create({
@@ -260,7 +270,8 @@ describe("getDetailFull", () => {
       expect(detail).not.toBeNull();
       expect(detail!.items[0]!.audioFile).toBeNull();
       expect(detail!.items[0]!.videoFile).toBeNull();
-      expect(detail!.items[0]!.pendingJob).toBeNull();
+      expect(detail!.items[0]!.pendingJobs.audio).toBeNull();
+      expect(detail!.items[0]!.pendingJobs.video).toBeNull();
       expect(detail!.recentSyncRuns).toEqual([]);
     } finally {
       ctx.cleanup();

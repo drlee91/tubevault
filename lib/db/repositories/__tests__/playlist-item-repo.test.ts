@@ -4,6 +4,8 @@ import { PlaylistRepo } from "../playlist-repo";
 import { VideoRepo } from "../video-repo";
 import { PlaylistItemRepo } from "../playlist-item-repo";
 import { MediaFileRepo } from "../media-file-repo";
+import { JobRepo } from "../job-repo";
+import { JobQueue } from "@/lib/jobs/queue";
 
 function setup() {
   const { db, sqlite } = createTestDb();
@@ -115,6 +117,34 @@ describe("PlaylistItemRepo", () => {
       const item = itemRepo.listWithJoinsForDetail(pid)[0]!;
       expect(Number.isNaN(new Date(item.addedAt).getTime())).toBe(false);
       expect(Number.isNaN(new Date(item.audioFile!.downloadedAt).getTime())).toBe(false);
+    } finally {
+      sqlite.close();
+    }
+  });
+
+  it("exposes per-kind pending download jobs", async () => {
+    const { db, sqlite } = createTestDb();
+    try {
+      const playlistRepo = new PlaylistRepo(db);
+      const videoRepo = new VideoRepo(db);
+      const itemRepo = new PlaylistItemRepo(db);
+      const jobRepo = new JobRepo(db);
+      const queue = new JobQueue(db, jobRepo);
+      const pid = playlistRepo.create({
+        provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio", title: "p",
+      });
+      const vid = videoRepo.upsert({
+        provider: "youtube", externalId: "v", title: "T", channelTitle: null,
+        durationSeconds: 1, thumbnailUrl: null, availabilityStatus: "available",
+      });
+      itemRepo.upsertActive(pid, vid, 0);
+      await queue.enqueue("download_video", { videoId: vid, kind: "audio" }, { priority: 5 });
+      // a kind-less job type must not leak into either slot
+      await queue.enqueue("check_availability", { videoId: vid }, { priority: 10 });
+
+      const item = itemRepo.listWithJoinsForDetail(pid)[0]!;
+      expect(item.pendingJobs.audio?.status).toBe("queued");
+      expect(item.pendingJobs.video).toBeNull();
     } finally {
       sqlite.close();
     }

@@ -11,22 +11,20 @@ describe("addVideoAction", () => {
   beforeEach(async () => { ctx = await createTestBootContext(); __setBootContextForTesting(ctx); });
   afterEach(() => { __setBootContextForTesting(null); ctx.cleanup(); });
 
-  it("returns ok with videoId and downloadJobId on success", async () => {
+  it("returns ok with videoId and downloadJobIds on success", async () => {
     const res = await addVideoAction({
       url: "https://www.youtube.com/watch?v=abc123",
-      format: "audio",
     });
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.data.videoId).toBeGreaterThan(0);
-      expect(res.data.downloadJobId).toBeGreaterThan(0);
+      expect(res.data.downloadJobIds).toHaveLength(2);
     }
   });
 
   it("returns error URL_NOT_VIDEO on playlist URL", async () => {
     const res = await addVideoAction({
       url: "https://www.youtube.com/playlist?list=PLtest",
-      format: "audio",
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.code).toBe("URL_NOT_VIDEO");

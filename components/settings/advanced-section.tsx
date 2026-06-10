@@ -80,7 +80,7 @@ export function AdvancedSection({ initial }: Props) {
     <section className="space-y-6">
       <div>
         <h2 className="text-base font-medium">Advanced</h2>
-        <p className="text-sm text-[var(--color-muted)]">
+        <p className="text-sm text-[var(--color-fg-muted)]">
           External tools for downloading and post-processing.
         </p>
       </div>
@@ -88,7 +88,7 @@ export function AdvancedSection({ initial }: Props) {
       {/* yt-dlp */}
       <div className="space-y-2">
         <Label htmlFor="ytdlp-path">yt-dlp path</Label>
-        <p className="text-xs text-[var(--color-muted)]">
+        <p className="text-xs text-[var(--color-fg-muted)]">
           Full path to the yt-dlp binary. Leave empty to use the system default.
         </p>
         <div className="flex items-center gap-2 max-w-xl">
@@ -116,10 +116,10 @@ export function AdvancedSection({ initial }: Props) {
         </div>
         {ytdlpResult !== null && (
           <div
-            className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm max-w-xl ${
+            className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-sm max-w-xl ${
               ytdlpResult.ok
-                ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
-                : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                ? "border-[var(--color-line)] bg-[var(--color-status-bg-available)] text-[var(--color-status-available)]"
+                : "border-[var(--color-line)] bg-[var(--color-status-bg-removed)] text-[var(--color-status-removed)]"
             }`}
           >
             {ytdlpResult.ok ? (
@@ -144,7 +144,7 @@ export function AdvancedSection({ initial }: Props) {
       {/* ffmpeg */}
       <div className="space-y-2">
         <Label htmlFor="ffmpeg-path">ffmpeg path</Label>
-        <p className="text-xs text-[var(--color-muted)]">
+        <p className="text-xs text-[var(--color-fg-muted)]">
           Full path to the ffmpeg binary. Leave empty to use the system default.
         </p>
         <div className="flex items-center gap-2 max-w-xl">
@@ -172,10 +172,10 @@ export function AdvancedSection({ initial }: Props) {
         </div>
         {ffmpegResult !== null && (
           <div
-            className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm max-w-xl ${
+            className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-sm max-w-xl ${
               ffmpegResult.ok
-                ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
-                : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                ? "border-[var(--color-line)] bg-[var(--color-status-bg-available)] text-[var(--color-status-available)]"
+                : "border-[var(--color-line)] bg-[var(--color-status-bg-removed)] text-[var(--color-status-removed)]"
             }`}
           >
             {ffmpegResult.ok ? (

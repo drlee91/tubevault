@@ -5,7 +5,7 @@ import { TopbarJobBadge } from "@/components/topbar/topbar-job-badge";
 
 export function Topbar() {
   return (
-    <header className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg)] px-4">
+    <header className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-bg)] px-4">
       <Link href="/" className="text-sm font-bold tracking-tight">TubeVault</Link>
       <div className="flex items-center gap-2">
         <AddDropdown />
