@@ -53,6 +53,37 @@ describe("<PlayerBar>", () => {
     expect(screen.getByText("3:20")).toBeInTheDocument();
   });
 
+  it("arrow keys seek by 5s, PageUp/Down by 30s, Home/End to bounds", async () => {
+    const store = withStore(); loadOne(store);
+    act(() => { store.getState().setPosition(100); });
+    render(<PlayerStoreProvider store={store}><PlayerBar /></PlayerStoreProvider>);
+    const slider = screen.getByRole("slider", { name: /seek/i });
+    slider.focus();
+
+    await userEvent.keyboard("{ArrowRight}");
+    expect(store.getState().position).toBe(105);
+    await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
+    expect(store.getState().position).toBe(95);
+    await userEvent.keyboard("{PageUp}");
+    expect(store.getState().position).toBe(125);
+    await userEvent.keyboard("{End}");
+    expect(store.getState().position).toBe(200);
+    await userEvent.keyboard("{ArrowRight}");
+    expect(store.getState().position).toBe(200); // clamped at duration
+    await userEvent.keyboard("{Home}");
+    expect(store.getState().position).toBe(0);
+  });
+
+  it("keyboard seek bumps the seekToken so PlayerCore applies it", async () => {
+    const store = withStore(); loadOne(store);
+    render(<PlayerStoreProvider store={store}><PlayerBar /></PlayerStoreProvider>);
+    const slider = screen.getByRole("slider", { name: /seek/i });
+    slider.focus();
+    const before = store.getState().seekToken;
+    await userEvent.keyboard("{ArrowRight}");
+    expect(store.getState().seekToken).toBe(before + 1);
+  });
+
   it("Next button calls store.next()", async () => {
     const store = withStore();
     store.getState().setQueue([

@@ -130,11 +130,13 @@ describe("PlaylistRepo", () => {
       itemRepo.upsertActive(id, v2, 1);
       itemRepo.upsertActive(id, v3, 2);
 
-      const row = repo.byIdWithStats(id)!;
-      expect(row.coverThumbs).toEqual([
+      const expected = [
         "https://img.youtube.com/vi/v1/0.jpg",
         "https://img.youtube.com/vi/v2/0.jpg",
-      ]);
+      ];
+      expect(repo.byIdWithStats(id)!.coverThumbs).toEqual(expected);
+      // listWithStats shares the subselect but is a separate query — pin both.
+      expect(repo.listWithStats()[0]!.coverThumbs).toEqual(expected);
     } finally {
       sqlite.close();
     }

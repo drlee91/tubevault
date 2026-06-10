@@ -34,6 +34,42 @@ export function PlayerBar() {
     store.getState().seek(ratio * duration);
   }
 
+  // ARIA slider pattern: arrows = small step, PageUp/Down = big step,
+  // Home/End = bounds. Without this, keyboard users can focus the slider
+  // (tabIndex) but not move it.
+  function seekFromKey(ev: React.KeyboardEvent<HTMLDivElement>) {
+    const s = store.getState();
+    const step = 5;
+    const bigStep = 30;
+    let target: number | null = null;
+    switch (ev.key) {
+      case "ArrowRight":
+      case "ArrowUp":
+        target = Math.min(duration, s.position + step);
+        break;
+      case "ArrowLeft":
+      case "ArrowDown":
+        target = Math.max(0, s.position - step);
+        break;
+      case "PageUp":
+        target = Math.min(duration, s.position + bigStep);
+        break;
+      case "PageDown":
+        target = Math.max(0, s.position - bigStep);
+        break;
+      case "Home":
+        target = 0;
+        break;
+      case "End":
+        target = duration;
+        break;
+    }
+    if (target !== null) {
+      ev.preventDefault();
+      s.seek(target);
+    }
+  }
+
   const RepeatIcon = repeat === "one" ? Repeat1 : Repeat;
   const repeatLabel = repeat === "off" ? "Repeat off" : repeat === "all" ? "Repeat all" : "Repeat one";
   const fillPct = duration > 0 ? (position / duration) * 100 : 0;
@@ -124,7 +160,8 @@ export function PlayerBar() {
               aria-valuenow={Math.floor(position)}
               tabIndex={0}
               onPointerDown={seekFromClick}
-              className="group relative h-1.5 w-full cursor-pointer rounded-full bg-[var(--color-line)]"
+              onKeyDown={seekFromKey}
+              className="group relative h-1.5 w-full cursor-pointer rounded-full bg-[var(--color-line)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
             >
               {/* Fill */}
               <div

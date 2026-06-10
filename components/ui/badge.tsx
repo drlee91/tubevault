@@ -7,9 +7,9 @@ const badgeVariants = cva(
   {
     variants: {
       tone: {
-        ok: "bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-100",
-        warn: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100",
-        error: "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-100",
+        ok: "bg-[var(--color-status-bg-available)] text-[var(--color-ok)]",
+        warn: "bg-[var(--color-status-bg-private)] text-[var(--color-warn)]",
+        error: "bg-[var(--color-status-bg-removed)] text-[var(--color-danger)]",
         muted: "bg-[var(--color-muted-bg)] text-[var(--color-fg-muted)]",
       },
     },
