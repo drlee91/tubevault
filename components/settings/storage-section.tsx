@@ -79,7 +79,7 @@ export function StorageSection({ initial }: Props) {
             control={form.control}
             name="useSingleStoragePath"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-[var(--color-line)] px-4 py-3">
+              <FormItem className="flex flex-row items-center justify-between rounded-xl border border-[var(--color-line)] bg-[var(--color-muted-bg)] px-4 py-3">
                 <div className="space-y-0.5">
                   <FormLabel className="text-sm font-medium">
                     Single storage path

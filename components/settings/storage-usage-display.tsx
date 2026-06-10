@@ -8,7 +8,7 @@ export function StorageUsageDisplay() {
   const { data, isLoading } = useStorageUsage();
   if (isLoading || !data) return <SkeletonRow count={2} />;
   return (
-    <div className="space-y-3 rounded-md border border-[var(--color-line)] p-4">
+    <div className="space-y-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-muted-bg)] p-5">
       <h3 className="text-sm font-medium">Disk Usage</h3>
       <div className="space-y-2">
         <UsageRow label="Audio" bytes={data.audio.totalBytes} files={data.audio.fileCount} />

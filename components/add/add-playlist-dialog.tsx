@@ -77,7 +77,7 @@ export function AddPlaylistDialog({ open, onOpenChange }: Props) {
             />
 
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Default format</legend>
+              <legend className="text-sm font-medium">Playback preference</legend>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <input type="radio" value="audio" {...form.register("defaultFormat")} />

@@ -116,10 +116,10 @@ export function AdvancedSection({ initial }: Props) {
         </div>
         {ytdlpResult !== null && (
           <div
-            className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm max-w-xl ${
+            className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-sm max-w-xl ${
               ytdlpResult.ok
-                ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
-                : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                ? "border-[var(--color-line)] bg-[var(--color-status-bg-available)] text-[var(--color-status-available)]"
+                : "border-[var(--color-line)] bg-[var(--color-status-bg-removed)] text-[var(--color-status-removed)]"
             }`}
           >
             {ytdlpResult.ok ? (
@@ -172,10 +172,10 @@ export function AdvancedSection({ initial }: Props) {
         </div>
         {ffmpegResult !== null && (
           <div
-            className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm max-w-xl ${
+            className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-sm max-w-xl ${
               ffmpegResult.ok
-                ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
-                : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                ? "border-[var(--color-line)] bg-[var(--color-status-bg-available)] text-[var(--color-status-available)]"
+                : "border-[var(--color-line)] bg-[var(--color-status-bg-removed)] text-[var(--color-status-removed)]"
             }`}
           >
             {ffmpegResult.ok ? (

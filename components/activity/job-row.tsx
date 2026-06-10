@@ -29,8 +29,8 @@ export function JobRow({ job, onMutate }: { job: JobsListItem; onMutate: () => v
   }
 
   return (
-    <div className="rounded-md border border-[var(--color-line)] text-sm">
-      <div className="grid grid-cols-[auto_1fr_auto_auto_auto_1fr_auto] items-center gap-3 px-3 py-2">
+    <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-muted-bg)] text-sm">
+      <div className="grid grid-cols-[auto_1fr_auto_auto_auto_1fr_auto] items-center gap-3 px-3 py-2.5">
         <JobTypeBadge type={job.type as JobType} />
         <span className="truncate">{job.subject?.title ?? <span className="text-[var(--color-fg-muted)]">—</span>}</span>
         <JobStatusPill status={job.status as JobStatusPillStatus} />

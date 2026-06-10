@@ -27,8 +27,7 @@ const map: Record<JobStatus, { label: string; icon: LucideIcon; classes: string;
   running: {
     label: "running",
     icon: Loader2,
-    classes:
-      "bg-[var(--color-status-bg-available)] text-[var(--color-status-available)]",
+    classes: "bg-[var(--color-muted-bg)] text-[var(--color-fg-muted)]",
     spin: true,
   },
   completed: {
