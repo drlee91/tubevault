@@ -138,6 +138,50 @@ describe("DownloadDuo – audio slot", () => {
     });
   });
 
+  it("missing: spinner persists after ok action while slot prop is still 'missing' (optimistic gap)", async () => {
+    vi.spyOn(videoActions, "downloadVideoAction").mockResolvedValue({
+      ok: true,
+      data: { jobId: 1 },
+    });
+
+    render(
+      <DownloadDuo
+        {...baseProps}
+        audio={{ state: "missing" }}
+        video={{ state: "missing" }}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /download audio/i }));
+
+    // action resolved ok but parent hasn't fed new slot data yet — spinner must stay
+    await waitFor(() => {
+      expect(screen.getByLabelText("audio download queued")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /download audio/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("missing: button returns when action fails (no optimistic gap on failure)", async () => {
+    vi.spyOn(videoActions, "downloadVideoAction").mockResolvedValue({
+      ok: false,
+      error: { code: "INTERNAL", message: "quota exceeded" },
+    });
+
+    render(
+      <DownloadDuo
+        {...baseProps}
+        audio={{ state: "missing" }}
+        video={{ state: "missing" }}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /download audio/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /download audio/i })).toBeInTheDocument();
+    });
+  });
+
   it("pending: renders spinner with correct aria-label and no button", () => {
     render(
       <DownloadDuo
@@ -231,6 +275,50 @@ describe("DownloadDuo – audio slot", () => {
       expect(toast.error).toHaveBeenCalledWith("Retry failed", {
         description: "job gone",
       });
+    });
+  });
+
+  it("failed: spinner persists after ok retry while slot prop is still 'failed' (optimistic gap)", async () => {
+    vi.spyOn(jobActions, "retryJobAction").mockResolvedValue({
+      ok: true,
+      data: { retried: true },
+    });
+
+    render(
+      <DownloadDuo
+        {...baseProps}
+        audio={{ state: "failed", jobId: 7 }}
+        video={{ state: "missing" }}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /retry audio/i }));
+
+    // action resolved ok but parent hasn't fed new slot data yet — spinner must stay
+    await waitFor(() => {
+      expect(screen.getByLabelText("audio download queued")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /retry audio/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("failed: retry button returns when retry action fails (no optimistic gap on failure)", async () => {
+    vi.spyOn(jobActions, "retryJobAction").mockResolvedValue({
+      ok: false,
+      error: { code: "NOT_FOUND", message: "job gone" },
+    });
+
+    render(
+      <DownloadDuo
+        {...baseProps}
+        audio={{ state: "failed", jobId: 7 }}
+        video={{ state: "missing" }}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /retry audio/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /retry audio/i })).toBeInTheDocument();
     });
   });
 });

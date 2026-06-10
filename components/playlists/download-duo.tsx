@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { Music, Film, Loader2, AlertCircle, ArrowDownToLine } from "lucide-react";
 import { toast } from "sonner";
 import { downloadVideoAction } from "@/lib/actions/video-actions";
@@ -43,8 +43,14 @@ interface SlotProps {
 
 function Slot({ kind, slot, videoId, canDownload, onMutate }: SlotProps) {
   const [pending, start] = useTransition();
+  const [optimistic, setOptimistic] = useState(false);
   const Icon = kind === "audio" ? Music : Film;
   const label = kind === "audio" ? "Audio" : "Video";
+
+  // Clear optimism whenever fresh data moves the slot off its previous state
+  useEffect(() => {
+    setOptimistic(false);
+  }, [slot.state]);
 
   if (slot.state === "present") {
     return (
@@ -58,7 +64,7 @@ function Slot({ kind, slot, videoId, canDownload, onMutate }: SlotProps) {
     );
   }
 
-  if (slot.state === "pending" || pending) {
+  if (slot.state === "pending" || pending || optimistic) {
     const status = slot.state === "pending" ? slot.status : "queued";
     return (
       <span
@@ -77,13 +83,18 @@ function Slot({ kind, slot, videoId, canDownload, onMutate }: SlotProps) {
         type="button"
         aria-label={`retry ${kind} download`}
         title={`${label} download failed — click to retry`}
-        onClick={() =>
+        onClick={() => {
+          setOptimistic(true);
           start(async () => {
             const r = await retryJobAction(slot.jobId);
-            if (!r.ok) toast.error("Retry failed", { description: r.error.message });
-            else onMutate?.();
-          })
-        }
+            if (!r.ok) {
+              setOptimistic(false);
+              toast.error("Retry failed", { description: r.error.message });
+            } else {
+              onMutate?.();
+            }
+          });
+        }}
         className="inline-flex rounded p-0.5 text-[var(--color-danger)] hover:bg-[var(--color-muted-bg)]"
       >
         <AlertCircle className="h-4 w-4" aria-hidden />
@@ -98,13 +109,18 @@ function Slot({ kind, slot, videoId, canDownload, onMutate }: SlotProps) {
       aria-label={`download ${kind}`}
       title={canDownload ? `Download ${label.toLowerCase()}` : "Not downloadable"}
       disabled={!canDownload}
-      onClick={() =>
+      onClick={() => {
+        setOptimistic(true);
         start(async () => {
           const r = await downloadVideoAction(videoId, kind);
-          if (!r.ok) toast.error("Download failed", { description: r.error.message });
-          else onMutate?.();
-        })
-      }
+          if (!r.ok) {
+            setOptimistic(false);
+            toast.error("Download failed", { description: r.error.message });
+          } else {
+            onMutate?.();
+          }
+        });
+      }}
       className={cn(
         "group/slot inline-flex rounded p-0.5 text-[var(--color-faint)]",
         canDownload && "hover:bg-[var(--color-muted-bg)] hover:text-[var(--color-fg)]",
