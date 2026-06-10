@@ -47,10 +47,10 @@ describe("RecentActivity", () => {
     expect(container.querySelector(".animate-spin")).toBeInTheDocument();
   });
 
-  it("renders Check icon for partial status (treated as ok)", () => {
+  it("renders warning triangle for partial status (finished with errors)", () => {
     const { container } = render(<RecentActivity items={[makeItem({ status: "partial" })]} />);
-    expect(container.querySelector(".lucide-check")).toBeInTheDocument();
-    expect(container.querySelector(".text-\\[var\\(--color-ok\\)\\]")).toBeInTheDocument();
+    expect(container.querySelector(".lucide-triangle-alert")).toBeInTheDocument();
+    expect(container.querySelector(".text-\\[var\\(--color-warn\\)\\]")).toBeInTheDocument();
   });
 
   it("renders orphan item (playlistId null) as non-link", () => {

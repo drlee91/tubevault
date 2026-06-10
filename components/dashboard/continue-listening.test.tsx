@@ -101,10 +101,7 @@ describe("<ContinueListening>", () => {
   it("clicking the second card sets queue to index 1 and isPlaying becomes true", async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(makeSlice()));
     const { store } = renderWithStore();
-    const secondCard = await screen.findByRole("button", { name: /Second Track/i });
-    // The button accessible name comes from the title text inside it
-    // use a more targeted approach: find by text proximity
-    const buttons = screen.getAllByRole("button");
+    const buttons = await screen.findAllByRole("button");
     // buttons[0] = current (First Track), buttons[1] = Second Track
     expect(buttons).toHaveLength(2);
     await act(async () => {

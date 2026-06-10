@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { RelativeTime } from "@/components/shared/relative-time";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Activity, Check, Loader2, X } from "lucide-react";
+import { Activity, Check, Loader2, TriangleAlert, X } from "lucide-react";
 
 interface Item {
   id: number;
@@ -22,8 +22,10 @@ interface Props {
 function StatusIcon({ status }: { status: Item["status"] }) {
   switch (status) {
     case "success":
-    case "partial":
       return <Check className="h-4 w-4 shrink-0 text-[var(--color-ok)]" aria-hidden />;
+    case "partial":
+      // finished, but with errors — a green check would hide that
+      return <TriangleAlert className="h-4 w-4 shrink-0 text-[var(--color-warn)]" aria-hidden />;
     case "failed":
       return <X className="h-4 w-4 shrink-0 text-[var(--color-danger)]" aria-hidden />;
     case "running":
