@@ -71,11 +71,16 @@ export interface AvailabilityProbe {
   reason: string | null;
 }
 
+export interface FetchPlaylistOpts {
+  /** Browser whose cookies yt-dlp should use (private playlists need a signed-in session). */
+  cookiesFromBrowser?: string | null;
+}
+
 export interface MediaProviderAdapter {
   readonly provider: ProviderId;
   matchesUrl(url: string): boolean;
   parseUrl(url: string): { kind: "playlist" | "video"; externalId: string } | null;
-  fetchPlaylist(url: string): Promise<PlaylistMetadata>;
+  fetchPlaylist(url: string, opts?: FetchPlaylistOpts): Promise<PlaylistMetadata>;
   fetchVideo(url: string): Promise<VideoMetadata>;
   download(externalId: string, opts: DownloadOpts): Promise<DownloadResult>;
   checkAvailability(externalId: string): Promise<AvailabilityProbe>;

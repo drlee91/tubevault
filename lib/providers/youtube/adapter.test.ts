@@ -52,6 +52,35 @@ describe("YouTubeAdapter.fetchPlaylist", () => {
     const statuses = meta.items.map((i) => i.inferredStatus);
     expect(statuses).toEqual(["available", "removed", "private"]);
   });
+
+  it("normalizes watch+list URLs to the bare playlist URL and passes cookies", async () => {
+    const stdout = await fixture("flat-playlist-music");
+    let captured: readonly string[] = [];
+    const exec: ExecFileLike = (_f, args, _o, cb) => {
+      captured = args;
+      cb(null, stdout, "");
+    };
+    const adapter = new YouTubeAdapter({ binary: "yt-dlp", execFile: exec });
+    await adapter.fetchPlaylist("https://www.youtube.com/watch?v=abc&list=PL9", {
+      cookiesFromBrowser: "firefox",
+    });
+    expect(captured).toContain("https://www.youtube.com/playlist?list=PL9");
+    expect(captured).not.toContain("https://www.youtube.com/watch?v=abc&list=PL9");
+    const i = captured.indexOf("--cookies-from-browser");
+    expect(i).toBeGreaterThan(-1);
+    expect(captured[i + 1]).toBe("firefox");
+  });
+
+  // yt-dlp falls back to single-video extraction when the playlist part of a
+  // watch+list URL is inaccessible; the resulting JSON has no `entries` and
+  // used to crash with "Cannot read properties of undefined (reading 'map')".
+  it("throws a descriptive error when yt-dlp returns a video instead of a playlist", async () => {
+    const stdout = await fixture("video-public");
+    const adapter = new YouTubeAdapter({ binary: "yt-dlp", execFile: fakeExecReturning(stdout) });
+    await expect(
+      adapter.fetchPlaylist("https://www.youtube.com/watch?v=abc&list=PLPRIVATE"),
+    ).rejects.toThrow(/private or deleted/i);
+  });
 });
 
 describe("YouTubeAdapter.fetchVideo", () => {

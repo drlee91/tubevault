@@ -2,6 +2,7 @@ import type {
   AvailabilityProbe,
   DownloadOpts,
   DownloadResult,
+  FetchPlaylistOpts,
   MediaProviderAdapter,
   PlaylistMetadata,
   ProviderId,
@@ -19,6 +20,8 @@ export interface FakeAdapterScript {
 
 export class FakeAdapter implements MediaProviderAdapter {
   readonly provider: ProviderId = "youtube";
+  /** Captured opts of the most recent fetchPlaylist call, for assertions. */
+  lastFetchPlaylistOpts: FetchPlaylistOpts | undefined;
   constructor(public script: FakeAdapterScript = {}) {}
 
   matchesUrl(url: string): boolean {
@@ -30,7 +33,8 @@ export class FakeAdapter implements MediaProviderAdapter {
     }
     return { kind: "video" as const, externalId: "vid" };
   }
-  async fetchPlaylist(): Promise<PlaylistMetadata> {
+  async fetchPlaylist(_url?: string, opts?: FetchPlaylistOpts): Promise<PlaylistMetadata> {
+    this.lastFetchPlaylistOpts = opts;
     const v = this.script.fetchPlaylist;
     if (!v) throw new Error("FakeAdapter: fetchPlaylist not scripted");
     return typeof v === "function" ? await v() : v;

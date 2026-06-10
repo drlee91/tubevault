@@ -113,6 +113,9 @@ async function doBoot(): Promise<BootContext> {
     syncRunRepo,
     registry,
     queue,
+    settings: () => ({
+      cookiesFromBrowser: settingsService.getYtdlpCookiesFromBrowser(),
+    }),
   });
 
   const downloadService = new DownloadService({

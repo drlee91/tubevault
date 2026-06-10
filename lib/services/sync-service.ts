@@ -21,6 +21,10 @@ export interface SyncResult {
   stats: { added: number; removed: number; unchanged: number; unavailable: number };
 }
 
+export interface SyncServiceSettings {
+  cookiesFromBrowser: string | null;
+}
+
 export interface SyncServiceDeps {
   db: BetterSQLite3Database<typeof schema>;
   playlistRepo: PlaylistRepo;
@@ -29,6 +33,8 @@ export interface SyncServiceDeps {
   syncRunRepo: SyncRunRepo;
   registry: ProviderRegistry;
   queue: JobQueue;
+  /** Live settings lookup — read per sync so changes apply without restart. */
+  settings?: () => SyncServiceSettings;
 }
 
 export class SyncService {
@@ -55,7 +61,9 @@ export class SyncService {
 
     try {
       // Network call is OUTSIDE the transaction — must not hold SQLite lock for 5+ seconds
-      const fetched = await adapter.fetchPlaylist(playlist.url);
+      const fetched = await adapter.fetchPlaylist(playlist.url, {
+        cookiesFromBrowser: this.d.settings?.().cookiesFromBrowser ?? null,
+      });
 
       this.d.db.transaction(() => {
         const known = new Set(this.d.itemRepo.activeExternalIdsByPlaylist(playlistId));
@@ -77,7 +85,12 @@ export class SyncService {
           });
           this.d.itemRepo.upsertActive(playlistId, videoId, pos);
           if (item.inferredStatus !== "available") stats.unavailable++;
-          if (added.includes(item.externalId) && item.inferredStatus === "available") {
+          // "unknown" downloads too — flat-playlist extraction often reports no
+          // availability (private playlists report none at all), and the download
+          // attempt itself is the real check (same semantics as downloadMissing).
+          const downloadable =
+            item.inferredStatus === "available" || item.inferredStatus === "unknown";
+          if (added.includes(item.externalId) && downloadable) {
             // Dual-format policy: every item gets both an audio and a video file.
             // playlist.defaultFormat is a playback preference only.
             enqueueQueue.push({ videoId, kind: "audio" });

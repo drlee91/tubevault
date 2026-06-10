@@ -24,7 +24,7 @@ function setup() {
   return { db, sqlite, playlistRepo, videoRepo, itemRepo, syncRunRepo, jobRepo, queue, registry };
 }
 
-function pl(items: Array<{ id: string; title: string; status?: "available" | "removed" | "private" }>): PlaylistMetadata {
+function pl(items: Array<{ id: string; title: string; status?: "available" | "removed" | "private" | "unknown" }>): PlaylistMetadata {
   return {
     externalId: "PL1",
     title: "Test",
@@ -66,6 +66,22 @@ describe("SyncService", () => {
     }
   });
 
+  it("passes the configured cookie browser to fetchPlaylist", async () => {
+    const ctx = setup();
+    try {
+      const fake = new FakeAdapter({ fetchPlaylist: pl([{ id: "v1", title: "T" }]) });
+      ctx.registry.register(fake);
+      const playlistId = ctx.playlistRepo.create({
+        provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio",
+      });
+      const svc = new SyncService({ ...ctx, settings: () => ({ cookiesFromBrowser: "firefox" }) });
+      await svc.sync(playlistId, "manual");
+      expect(fake.lastFetchPlaylistOpts?.cookiesFromBrowser).toBe("firefox");
+    } finally {
+      ctx.sqlite.close();
+    }
+  });
+
   it("re-sync marks removed videos and does not enqueue downloads for them", async () => {
     const ctx = setup();
     try {
@@ -101,6 +117,25 @@ describe("SyncService", () => {
           { id: "ok", title: "OK", status: "available" },
           { id: "del", title: "[Deleted video]", status: "removed" },
         ]),
+      }));
+      const svc = new SyncService(ctx);
+      await svc.sync(playlistId, "manual");
+      expect(ctx.jobRepo.countByStatus().queued).toBe(2);
+    } finally {
+      ctx.sqlite.close();
+    }
+  });
+
+  // Flat-playlist extraction often reports no availability at all (private
+  // playlists never do), so "unknown" must download — the attempt is the check.
+  it("enqueues downloads for items with unknown availability", async () => {
+    const ctx = setup();
+    try {
+      const playlistId = ctx.playlistRepo.create({
+        provider: "youtube", externalId: "PL1", url: "u", defaultFormat: "audio",
+      });
+      ctx.registry.register(new FakeAdapter({
+        fetchPlaylist: pl([{ id: "u1", title: "No availability field", status: "unknown" }]),
       }));
       const svc = new SyncService(ctx);
       await svc.sync(playlistId, "manual");

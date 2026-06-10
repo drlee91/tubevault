@@ -2,6 +2,7 @@ import type {
   AvailabilityProbe,
   DownloadOpts,
   DownloadResult,
+  FetchPlaylistOpts,
   MediaProviderAdapter,
   PlaylistMetadata,
   ProviderId,
@@ -59,12 +60,37 @@ export class YouTubeAdapter implements MediaProviderAdapter {
     return parseYouTubeUrl(url);
   }
 
-  async fetchPlaylist(url: string): Promise<PlaylistMetadata> {
-    const stdout = await runYtDlp(
-      ["--flat-playlist", "--dump-single-json", "--no-warnings", url],
-      { binary: this.opts.binary, execFile: this.opts.execFile, timeoutMs: this.opts.timeoutMs },
-    );
+  async fetchPlaylist(url: string, opts?: FetchPlaylistOpts): Promise<PlaylistMetadata> {
+    // Normalize watch?v=X&list=Y to the bare playlist URL. With the combined
+    // form yt-dlp silently falls back to the single video when the playlist
+    // is inaccessible (private/deleted); the bare form fails hard with
+    // YouTube's actual error message instead.
+    const parsed = parseYouTubeUrl(url);
+    const target =
+      parsed?.kind === "playlist"
+        ? `https://www.youtube.com/playlist?list=${parsed.externalId}`
+        : url;
+    const args = ["--flat-playlist", "--dump-single-json", "--no-warnings"];
+    if (opts?.cookiesFromBrowser) {
+      // Private playlists are only visible to a signed-in session.
+      args.push("--cookies-from-browser", opts.cookiesFromBrowser);
+    }
+    args.push(target);
+    const stdout = await runYtDlp(args, {
+      binary: this.opts.binary,
+      execFile: this.opts.execFile,
+      timeoutMs: this.opts.timeoutMs,
+    });
     const json = JSON.parse(stdout) as FlatPlaylistJson;
+    if (!Array.isArray(json.entries)) {
+      // yt-dlp resolved the URL to something that is not a playlist (e.g. the
+      // single-video fallback described above).
+      throw new Error(
+        `playlist ${parsed?.kind === "playlist" ? parsed.externalId : url} returned no entries — ` +
+          `it is likely private or deleted. For your own private playlists, pick a cookie ` +
+          `browser under Settings → Advanced so yt-dlp can use your YouTube session.`,
+      );
+    }
     const items: VideoStub[] = json.entries.map((e) => ({
       externalId: e.id,
       title: e.title,
