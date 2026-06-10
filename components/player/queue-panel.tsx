@@ -10,7 +10,7 @@ export function QueuePanel() {
   return (
     <aside
       aria-label="Queue"
-      className="fixed bottom-[88px] right-4 top-16 z-20 hidden w-[360px] flex-col overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-2)] md:flex"
+      className="fixed bottom-[80px] right-4 top-16 z-20 hidden w-[360px] flex-col overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-2)] md:flex"
     >
       <div className="flex items-center justify-end border-b border-[var(--color-line)] px-2 py-1">
         <button

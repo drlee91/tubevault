@@ -45,11 +45,12 @@ describe("<PlayerBar>", () => {
     expect(store.getState().isPlaying).toBe(false);
   });
 
-  it("formats time as M:SS / M:SS", () => {
+  it("formats current time and duration into separate spans", () => {
     const store = withStore(); loadOne(store);
     act(() => { store.getState().setPosition(75); });
     render(<PlayerStoreProvider store={store}><PlayerBar /></PlayerStoreProvider>);
-    expect(screen.getByText("1:15 / 3:20")).toBeInTheDocument();
+    expect(screen.getByText("1:15")).toBeInTheDocument();
+    expect(screen.getByText("3:20")).toBeInTheDocument();
   });
 
   it("Next button calls store.next()", async () => {
@@ -63,12 +64,12 @@ describe("<PlayerBar>", () => {
     expect(store.getState().currentIndex).toBe(1);
   });
 
-  it("clicking the progress stripe seeks", async () => {
+  it("clicking the seek slider seeks", async () => {
     const store = withStore(); loadOne(store);
     render(<PlayerStoreProvider store={store}><PlayerBar /></PlayerStoreProvider>);
-    const stripe = screen.getByRole("slider", { name: /seek/i });
-    Object.defineProperty(stripe, "getBoundingClientRect", { value: () => ({ left: 0, width: 100, top: 0, right: 100, bottom: 2, height: 2 }) });
-    await userEvent.pointer({ keys: "[MouseLeft>]", target: stripe, coords: { x: 50, y: 1 } });
+    const slider = screen.getByRole("slider", { name: /seek/i });
+    Object.defineProperty(slider, "getBoundingClientRect", { value: () => ({ left: 0, width: 100, top: 0, right: 100, bottom: 6, height: 6 }) });
+    await userEvent.pointer({ keys: "[MouseLeft>]", target: slider, coords: { x: 50, y: 3 } });
     expect(store.getState().position).toBeCloseTo(100, 0);
   });
 
@@ -100,5 +101,22 @@ describe("<PlayerBar>", () => {
     expect(btn).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(btn);
     expect(store.getState().mode).toBe("mini");
+  });
+
+  it("artwork button calls openFullscreen when track has thumbnailUrl", async () => {
+    const store = withStore();
+    store.getState().setQueue([{
+      videoId: 1, defaultKind: "audio", title: "Hello",
+      channelTitle: "Chan", thumbnailUrl: "https://example.com/thumb.jpg",
+      durationSeconds: 200, availableKinds: ["audio"],
+    }], 0);
+    store.getState().setDuration(200);
+    render(<PlayerStoreProvider store={store}><PlayerBar /></PlayerStoreProvider>);
+    // There are two "Open fullscreen" buttons: artwork (left) and icon (right)
+    const buttons = screen.getAllByRole("button", { name: /open fullscreen/i });
+    expect(buttons).toHaveLength(2);
+    // Click the artwork button (first one, in left cluster)
+    await userEvent.click(buttons[0]!);
+    expect(store.getState().mode).toBe("fullscreen");
   });
 });
